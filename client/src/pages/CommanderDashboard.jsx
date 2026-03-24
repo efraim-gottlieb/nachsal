@@ -151,6 +151,7 @@ export default function CommanderDashboard() {
     return [...set];
   }, [events, orefCities]);
 
+
   async function handleTriggerEvent() {
     if (!selectedCities.length) {
       showToast("נא לבחור ערים", "warning");
@@ -159,6 +160,22 @@ export default function CommanderDashboard() {
     try {
       const result = await api.triggerEvent(selectedCities);
       showToast(`אירוע נוצר - ${result.affected_soldiers} חיילים מושפעים`, "success");
+      setSelectedCities([]);
+      await loadData();
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  async function handleTriggerEventAll() {
+    if (!soldierCities.length) {
+      showToast("אין ערים זמינות להזנקה", "warning");
+      return;
+    }
+    if (!window.confirm("האם להזניק אירוע לכל הערים?")) return;
+    try {
+      const result = await api.triggerEvent(soldierCities);
+      showToast(`אירוע נוצר לכל הערים - ${result.affected_soldiers} חיילים מושפעים`, "success");
       setSelectedCities([]);
       await loadData();
     } catch (err) {
@@ -299,6 +316,9 @@ export default function CommanderDashboard() {
             </div>
             <button className="btn btn-danger" onClick={handleTriggerEvent}>
               הזנק אירוע
+            </button>
+            <button className="btn btn-primary" style={{marginRight: 8, marginTop: 8}} onClick={handleTriggerEventAll}>
+              הזנק אירוע לכל הערים
             </button>
           </div>
         </div>
