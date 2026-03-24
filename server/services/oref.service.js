@@ -1,6 +1,7 @@
 import { createEvent } from "../services/event.service.js";
 import { createSoldierStatuses } from "../services/soldierStatus.service.js";
 import { getSoldiersByCities } from "../services/user.service.js";
+import { upsertOrefAlerts, removeOrefAlerts } from "./orefAlert.service.js";
 
 let previousAlertCities = [];
 let isAlertActive = false;
@@ -41,6 +42,10 @@ export function startOrefPolling(io) {
         if (!isAlertActive || JSON.stringify(cities) !== JSON.stringify(previousAlertCities)) {
           isAlertActive = true;
           previousAlertCities = cities;
+
+          // Persist alerts in DB
+          await upsertOrefAlerts(cities);
+          await removeOrefAlerts(cities);
 
           console.log(`[Oref] ${title} - ${cities.join(", ")}`);
 

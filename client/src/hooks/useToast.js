@@ -10,7 +10,7 @@ export function useToast() {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
+    }, 5000); // 5 שניות
   }, []);
 
   return { toasts, showToast };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
@@ -27,6 +27,17 @@ export default function CommanderDashboard() {
   const [selectedCities, setSelectedCities] = useState([]);
   const [orefAlert, setOrefAlert] = useState(null);
   const [orefCities, setOrefCities] = useState([]);
+  const [persistentOrefCities, setPersistentOrefCities] = useState([]);
+  const orefTimeouts = useRef({});
+    // Load persistent Oref alerts from backend
+    const loadPersistentOrefAlerts = useCallback(async () => {
+      try {
+        const alerts = await api.getOrefAlerts();
+        setPersistentOrefCities(alerts.map(a => a.city));
+      } catch (err) {
+        // ignore
+      }
+    }, []);
   const [expandedEvents, setExpandedEvents] = useState({});
   const [eventStatuses, setEventStatuses] = useState({});
   const [pendingCount, setPendingCount] = useState(0);
@@ -76,7 +87,8 @@ export default function CommanderDashboard() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadPersistentOrefAlerts();
+  }, [loadData, loadPersistentOrefAlerts]);
 
   // Socket listeners
   useEffect(() => {
@@ -94,12 +106,23 @@ export default function CommanderDashboard() {
         setOrefCities(data.cities);
         showToast(`${data.title || "התראה"}: ${data.cities.join(", ")}`, "alert");
         loadSoldierCities();
+        // Set timeouts for each city to remove after 15 min
+        data.cities.forEach(city => {
+          if (orefTimeouts.current[city]) clearTimeout(orefTimeouts.current[city]);
+          orefTimeouts.current[city] = setTimeout(() => {
+            setPersistentOrefCities(prev => prev.filter(c => c !== city));
+          }, 15 * 60 * 1000);
+        });
+        // Also reload persistent alerts from backend
+        loadPersistentOrefAlerts();
       } else {
         showToast(`האירוע הסתיים: ${data.cities.join(", ")}`, "success");
         setTimeout(() => {
           setOrefAlert(null);
           setOrefCities([]);
         }, 10000);
+        // Reload persistent alerts
+        loadPersistentOrefAlerts();
       }
     }
 
@@ -148,14 +171,15 @@ export default function CommanderDashboard() {
       socket.off("soldier_location_updated", onSoldierLocationUpdated);
       socket.off("event_ended", onEventEnded);
     };
-  }, [socket, showToast, loadData, loadSoldiers]);
+  }, [socket, showToast, loadData, loadSoldiers, loadPersistentOrefAlerts]);
 
+  // Merge persistent Oref cities with live orefCities for display
   const activeCities = useMemo(() => {
     const set = new Set();
     events.forEach((e) => e.cities.forEach((c) => set.add(c)));
-    orefCities.forEach((c) => set.add(c));
+    [...orefCities, ...persistentOrefCities].forEach((c) => set.add(c));
     return [...set];
-  }, [events, orefCities]);
+  }, [events, orefCities, persistentOrefCities]);
 
 
   async function handleTriggerEvent() {

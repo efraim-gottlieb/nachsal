@@ -25,6 +25,10 @@ class API {
     localStorage.setItem("user", JSON.stringify(user));
   }
 
+  async getOrefAlerts() {
+    return this.request("GET", "/api/oref-alerts");
+  }
+
   async request(method, path, body = null) {
     const headers = { "Content-Type": "application/json" };
     if (this.token) {

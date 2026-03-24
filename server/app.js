@@ -61,9 +61,8 @@ app.get("/demo-oref-alert", async (req, res) => {
       desc: "התראת דמו ידנית",
       timestamp: new Date(),
     });
-    // צור אירוע אמיתי במערכת (כמו התראה רגילה)
-    await triggerEventFromOref(cities, io);
-    res.json({ ok: true, message: "התראת דמו נשלחה לירושלים ותל אביב" });
+    // לא ליצור אירוע אמיתי במערכת
+    res.json({ ok: true, message: "התראת דמו נשלחה לירושלים ותל אביב (ללא יצירת אירוע)" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
