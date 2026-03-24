@@ -7,6 +7,7 @@ const router = Router();
 
 router.put("/location", auth, asyncHandler(userControllers.updateLocation));
 router.put("/phone", auth, asyncHandler(userControllers.updatePhone));
+router.post("/soldiers", auth, asyncHandler(userControllers.createSoldier));
 router.get("/soldiers", auth, asyncHandler(userControllers.listAllSoldiers));
 router.get("/my-soldiers", auth, asyncHandler(userControllers.getMySoldiers));
 router.get("/soldier-cities", auth, asyncHandler(userControllers.listSoldierCities));

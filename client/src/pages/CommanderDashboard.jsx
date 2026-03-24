@@ -45,6 +45,8 @@ export default function CommanderDashboard() {
   const [editingSoldier, setEditingSoldier] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", phone: "", city: "", email: "" });
   const [soldierSearch, setSoldierSearch] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: "", email: "", password: "", phone: "", city: "" });
 
   const loadSoldiers = useCallback(async () => {
     try {
@@ -293,6 +295,22 @@ export default function CommanderDashboard() {
     }
   }
 
+  async function handleAddSoldier() {
+    if (!addForm.name || !addForm.email || !addForm.password || !addForm.phone) {
+      showToast("נא למלא שם, אימייל, סיסמה וטלפון", "warning");
+      return;
+    }
+    try {
+      await api.createSoldier(addForm);
+      showToast("החייל נוסף בהצלחה", "success");
+      setShowAddModal(false);
+      setAddForm({ name: "", email: "", password: "", phone: "", city: "" });
+      await loadData();
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
   const filteredSoldiers = soldiers.filter((s) =>
     s.name.includes(soldierSearch) ||
     s.phone.includes(soldierSearch) ||
@@ -471,7 +489,12 @@ export default function CommanderDashboard() {
             <SoldiersMap soldiers={soldiers} activeCities={activeCities} />
           </div>
           <div className="card">
-            <h2>👥 ניהול חיילים</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "2px solid #f0f2f5", paddingBottom: 10 }}>
+              <h2 style={{ margin: 0, border: "none", paddingBottom: 0 }}>👥 ניהול חיילים</h2>
+              <button className="btn btn-success btn-small" onClick={() => setShowAddModal(true)}>
+                ➕ הוסף חייל
+              </button>
+            </div>
             <div className="form-group" style={{ marginBottom: 12 }}>
               <input
                 type="text"
@@ -526,6 +549,68 @@ export default function CommanderDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Add Soldier Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>➕ הוספת חייל חדש</h2>
+            <div className="form-group">
+              <label>שם</label>
+              <input
+                type="text"
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                placeholder="שם מלא"
+              />
+            </div>
+            <div className="form-group">
+              <label>אימייל</label>
+              <input
+                type="email"
+                value={addForm.email}
+                onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                placeholder="email@example.com"
+              />
+            </div>
+            <div className="form-group">
+              <label>סיסמה</label>
+              <input
+                type="password"
+                value={addForm.password}
+                onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                placeholder="סיסמה"
+              />
+            </div>
+            <div className="form-group">
+              <label>טלפון</label>
+              <input
+                type="tel"
+                value={addForm.phone}
+                onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                placeholder="050-1234567"
+              />
+            </div>
+            <div className="form-group">
+              <label>עיר (אופציונלי)</label>
+              <input
+                type="text"
+                value={addForm.city}
+                onChange={(e) => setAddForm({ ...addForm, city: e.target.value })}
+                placeholder="עיר מגורים"
+              />
+            </div>
+            <div className="btn-group" style={{ marginTop: 16 }}>
+              <button className="btn btn-success" onClick={handleAddSoldier}>
+                הוסף
+              </button>
+              <button className="btn btn-danger" onClick={() => setShowAddModal(false)}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Soldier Modal */}
       {editingSoldier && (

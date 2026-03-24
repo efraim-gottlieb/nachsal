@@ -109,6 +109,10 @@ class API {
     return this.request("GET", "/api/status/pending");
   }
 
+  async createSoldier(data) {
+    return this.request("POST", "/api/users/soldiers", data);
+  }
+
   async updateSoldier(id, data) {
     return this.request("PUT", `/api/users/${id}`, data);
   }

@@ -18,6 +18,8 @@ import {
   getSoldierCities,
   updateSoldierById,
   deleteSoldierById,
+  createUser,
+  getUserByEmail,
 } from "../services/user.service.js";
 
 export async function updateLocation(req, res) {
@@ -81,6 +83,31 @@ export async function listSoldierCities(req, res) {
 
   const cities = await getSoldierCities();
   res.json(cities);
+}
+
+export async function createSoldier(req, res) {
+  if (!["commander", "admin"].includes(req.user.user_type)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const { name, email, password, phone, city } = req.body;
+
+  if (!name || !email || !password || !phone) {
+    return res.status(400).json({ message: "name, email, password and phone are required" });
+  }
+
+  const existing = await getUserByEmail(email);
+  if (existing) {
+    return res.status(400).json({ message: "Email already exists" });
+  }
+
+  const soldier = await createUser(name, email, password, phone, "soldier", req.user._id);
+  if (city) {
+    await updateSoldierById(soldier._id, { city });
+  }
+
+  const result = await getUserById(soldier._id);
+  res.status(201).json(result);
 }
 
 export async function updateSoldier(req, res) {
