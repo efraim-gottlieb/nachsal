@@ -1,0 +1,223 @@
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
+import { api } from "../services/api";
+import Header from "../components/Header";
+import ToastContainer from "../components/ToastContainer";
+import { useToast } from "../hooks/useToast";
+
+const quickCities = [
+  "תל אביב", "ירושלים", "חיפה", "באר שבע", "אשדוד", "אשקלון",
+  "נתניה", "הרצליה", "ראשון לציון", "פתח תקווה", "שדרות", "קריית שמונה",
+];
+
+export default function SoldierPanel() {
+  const { user, logout, updateUser } = useAuth();
+  const { socket } = useSocket();
+  const navigate = useNavigate();
+  const { toasts, showToast } = useToast();
+
+  const [cityInput, setCityInput] = useState("");
+  const [surveys, setSurveys] = useState([]);
+  const [modalEvent, setModalEvent] = useState(null);
+  const [respondedEvents, setRespondedEvents] = useState({});
+
+  const loadPendingSurveys = useCallback(async () => {
+    try {
+      const data = await api.getPendingSurveys();
+      setSurveys(data);
+    } catch (err) {
+      console.error("Error loading surveys:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPendingSurveys();
+  }, [loadPendingSurveys]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    function onNewSurvey(data) {
+      showToast(data.message, "alert");
+      setModalEvent(data);
+      setSurveys((prev) => {
+        if (prev.some((s) => (s.event_id?._id || s.event_id) === data.event_id)) return prev;
+        return [{ event_id: data.event_id, message: data.message }, ...prev];
+      });
+    }
+
+    function onEventEnded(data) {
+      showToast(`האירוע הסתיים: ${data.cities.join(", ")}`, "success");
+      setModalEvent(null);
+      loadPendingSurveys();
+    }
+
+    socket.on("new_event_survey", onNewSurvey);
+    socket.on("event_ended", onEventEnded);
+    return () => {
+      socket.off("new_event_survey", onNewSurvey);
+      socket.off("event_ended", onEventEnded);
+    };
+  }, [socket, showToast, loadPendingSurveys]);
+
+  async function handleRespond(eventId, status) {
+    try {
+      await api.respondToEvent(eventId, status);
+      setRespondedEvents((prev) => ({ ...prev, [eventId]: status }));
+      setModalEvent(null);
+      showToast("התשובה נשלחה בהצלחה", "success");
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  async function handleUpdateLocation(city) {
+    if (!city.trim()) {
+      showToast("נא להזין שם עיר", "warning");
+      return;
+    }
+    try {
+      await api.updateLocation(city, 0, 0);
+      updateUser({ city });
+      setCityInput("");
+      if (socket) socket.emit("update_city", { city });
+      showToast(`מיקום עודכן ל${city}`, "success");
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
+
+  return (
+    <div>
+      <ToastContainer toasts={toasts} />
+      <Header
+        title="🛡️ מערכת נכס״ל - אזור אישי"
+        userName={user?.name}
+        onLogout={handleLogout}
+      />
+
+      <div className="container" style={{ maxWidth: 700 }}>
+        {/* Pending Surveys */}
+        {surveys.map((s) => {
+          const eid = s.event_id?._id || s.event_id;
+          const responded = respondedEvents[eid];
+          return (
+            <div
+              key={eid}
+              className={`survey-card ${responded ? "responded" : ""}`}
+              style={
+                responded
+                  ? {
+                      borderColor: responded === "ok" ? "#16a34a" : "#dc2626",
+                      background: responded === "ok" ? "#f0fdf4" : "#fff5f5",
+                    }
+                  : undefined
+              }
+            >
+              {responded ? (
+                <>
+                  <h3 style={{ color: responded === "ok" ? "#16a34a" : "#dc2626" }}>
+                    {responded === "ok" ? "✅ דיווחת שאתה בסדר" : "❌ דיווחת שאינך בסדר"}
+                  </h3>
+                  <p>התשובה נשלחה למפקד</p>
+                </>
+              ) : (
+                <>
+                  <h3>🚨 סקר נכס״ל</h3>
+                  <p>
+                    {s.event_id?.cities
+                      ? `התראה פעילה ב: ${s.event_id.cities.join(", ")}`
+                      : s.message || "אזורך"}
+                  </p>
+                  <p>האם אתה בסדר?</p>
+                  <div className="btn-group">
+                    <button
+                      className="btn btn-success"
+                      onClick={() => handleRespond(eid, "ok")}
+                    >
+                      אני בסדר ✅
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleRespond(eid, "not_ok")}
+                    >
+                      אני לא בסדר ❌
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Location */}
+        <div className="location-card">
+          <h3>📍 מיקום נוכחי</h3>
+          <div className="current-location">{user?.city || "לא עודכן"}</div>
+          <div className="form-group">
+            <label>עדכון עיר</label>
+            <input
+              type="text"
+              placeholder="הזן את שם העיר הנוכחית"
+              value={cityInput}
+              onChange={(e) => setCityInput(e.target.value)}
+            />
+          </div>
+          <button
+            className="btn btn-success"
+            onClick={() => handleUpdateLocation(cityInput)}
+          >
+            עדכן מיקום
+          </button>
+        </div>
+
+        {/* Quick Cities */}
+        <div className="card">
+          <h2>🏙️ עדכון מהיר</h2>
+          <div className="alert-cities-list">
+            {quickCities.map((c) => (
+              <button
+                key={c}
+                className="city-tag safe"
+                onClick={() => handleUpdateLocation(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Survey Modal */}
+      {modalEvent && !respondedEvents[modalEvent.event_id] && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>🚨 התראה!</h2>
+            <p>{modalEvent.message}</p>
+            <div className="btn-group">
+              <button
+                className="btn btn-success"
+                onClick={() => handleRespond(modalEvent.event_id, "ok")}
+              >
+                אני בסדר ✅
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={() => handleRespond(modalEvent.event_id, "not_ok")}
+              >
+                אני לא בסדר ❌
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
