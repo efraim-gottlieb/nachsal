@@ -1,5 +1,6 @@
 // --- DEMO OREF ALERT ENDPOINT (no auth) ---
 import { triggerEventFromOref } from "./services/oref.service.js";
+import { sendSms } from "./services/sms.service.js";
 
 // Endpoint to trigger fake Oref alert for Jerusalem and Tel Aviv
 
@@ -35,9 +36,20 @@ const io = new Server(httpServer, {
 // Store io instance on app for controllers to use
 app.set("io", io);
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// בדיקת שליחת SMS ידנית - לפני השרת הסטטי
+app.get("/api/test-sms", async (req, res) => {
+  try {
+    const result = await sendSms("0549674146", "בדיקת SMS מהמערכת nachsal");
+    res.json({ ok: true, result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 // Serve React build
 const clientDist = join(__dirname, "..", "client", "dist");
@@ -75,6 +87,16 @@ app.get("/demo-oref", (req, res) => {
 // SPA fallback — serve index.html for all non-API routes
 app.get("/{*splat}", (req, res) => {
   res.sendFile(join(clientDist, "index.html"));
+});
+
+// בדיקת שליחת SMS ידנית
+app.get("/api/test-sms", async (req, res) => {
+  try {
+    const result = await sendSms("0549674146", "בדיקת SMS מהמערכת nachsal");
+    res.json({ ok: true, result });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // Error handling

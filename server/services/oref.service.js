@@ -1,8 +1,6 @@
-import { createEvent } from "../services/event.service.js";
-import { createSoldierStatuses } from "../services/soldierStatus.service.js";
-import { getSoldiersByCities } from "../services/user.service.js";
-import { upsertOrefAlerts, removeOrefAlerts } from "./orefAlert.service.js";
+import { sendSms } from "./sms.service.js";
 
+// פונקציה זו נמחקה כי יש כפילות בראש הקובץ
 let previousAlertCities = [];
 let isAlertActive = false;
 
@@ -71,6 +69,17 @@ export function startOrefPolling(io) {
                 phone: s.phone,
               })),
             });
+
+            // שליחת SMS לכל חייל בעיר שנפגעה
+            for (const soldier of soldiers) {
+              if (soldier.phone) {
+                try {
+                  await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! אנא אשר מצבך במערכת.`);
+                } catch (e) {
+                  console.error(`SMS failed for ${soldier.phone}:`, e.message);
+                }
+              }
+            }
           }
         }
       } else if (isAlertActive) {
@@ -110,7 +119,18 @@ export async function triggerEventFromOref(cities, io) {
         message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`,
       });
     }
-  }
 
-  return { event, affected_soldiers: soldiers.length };
+    // Send SMS to all soldiers
+    for (const soldier of soldiers) {
+      if (soldier.phone) {
+        try {
+          await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`);
+        } catch (e) {
+          console.error(`SMS failed for ${soldier.phone}:`, e.message);
+        }
+      }
+    }
+
+    return { event, affected_soldiers: soldiers.length };
+}
 }

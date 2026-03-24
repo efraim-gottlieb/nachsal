@@ -1,6 +1,7 @@
 import { createEvent, getActiveEvents, getEventById, endEvent, getAllEvents } from "../services/event.service.js";
 import { createSoldierStatuses, getStatusesByEvent } from "../services/soldierStatus.service.js";
 import { getSoldiersByCities } from "../services/user.service.js";
+import { sendSms } from "../services/sms.service.js";
 
 export async function triggerEvent(req, res) {
   if (!["commander", "admin"].includes(req.user.user_type)) {
@@ -39,6 +40,22 @@ export async function triggerEvent(req, res) {
         soldiers_count: soldiers.length,
       });
     }
+
+    // Send SMS to all soldiers in affected cities
+    for (const soldier of soldiers) {
+      if (soldier.phone) {
+        try {
+          await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`);
+        } catch (e) {
+          console.error(`SMS failed for ${soldier.phone}:`, e.message);
+        }
+      }
+    }
+
+    res.status(201).json({
+      event,
+      affected_soldiers: soldiers.length,
+    });
   }
 
   res.status(201).json({
