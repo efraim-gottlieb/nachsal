@@ -1,3 +1,8 @@
+// --- DEMO OREF ALERT ENDPOINT (no auth) ---
+import { triggerEventFromOref } from "./services/oref.service.js";
+
+// Endpoint to trigger fake Oref alert for Jerusalem and Tel Aviv
+
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -21,6 +26,7 @@ import eventRoutes from "./routes/event.routes.js";
 import statusRoutes from "./routes/status.routes.js";
 
 const app = express();
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: "*" },
@@ -42,6 +48,30 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/status", statusRoutes);
+
+app.get("/demo-oref-alert", async (req, res) => {
+  try {
+    const io = req.app.get("io");
+    const cities = ["ירושלים", "תל אביב"];
+    // Use the same title as real Oref alert
+    await io.to("commanders").emit("oref_alert", {
+      status: "active",
+      cities,
+      title: "ירי רקטות וטילים",
+      desc: "התראת דמו ידנית",
+      timestamp: new Date(),
+    });
+    // צור אירוע אמיתי במערכת (כמו התראה רגילה)
+    await triggerEventFromOref(cities, io);
+    res.json({ ok: true, message: "התראת דמו נשלחה לירושלים ותל אביב" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// Serve demo page for Oref alert (no login required)
+app.get("/demo-oref", (req, res) => {
+  res.sendFile(join(__dirname, "demo-oref.html"));
+});
 
 // SPA fallback — serve index.html for all non-API routes
 app.get("/{*splat}", (req, res) => {

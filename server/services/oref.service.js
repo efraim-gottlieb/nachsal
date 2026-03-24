@@ -27,6 +27,17 @@ export function startOrefPolling(io) {
         const title = alertData.title || "";
         const desc = alertData.desc || "";
 
+        // Only allow specific alert types
+        const allowedTitles = [
+         "ירי רקטות וטילים",
+          "חדירת כלי טיס עוין",
+        ];
+
+        if (!allowedTitles.includes(title)) {
+          // Ignore any alert that is not in the allowed list
+          return;
+        }
+
         if (!isAlertActive || JSON.stringify(cities) !== JSON.stringify(previousAlertCities)) {
           isAlertActive = true;
           previousAlertCities = cities;

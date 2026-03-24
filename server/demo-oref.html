@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>הפעלת התראת דמו</title>
+  <style>
+    body { font-family: sans-serif; background: #f7fafc; text-align: center; margin-top: 80px; }
+    .btn { background: #dc2626; color: #fff; border: none; padding: 16px 32px; font-size: 1.2em; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+    .btn:hover { background: #b91c1c; }
+    .msg { margin-top: 32px; font-size: 1.1em; color: #2563eb; }
+  </style>
+</head>
+<body>
+  <h1>הפעלת התראת דמו לירושלים ותל אביב</h1>
+  <button class="btn" onclick="triggerDemo()">הפעל התראה</button>
+  <div class="msg" id="msg"></div>
+  <script>
+    async function triggerDemo() {
+      document.getElementById('msg').textContent = 'שולח התראה...';
+      try {
+        const res = await fetch('/demo-oref-alert');
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('msg').textContent = 'התראת דמו נשלחה בהצלחה!';
+        } else {
+          document.getElementById('msg').textContent = data.error || 'שגיאה בשליחה';
+        }
+      } catch (e) {
+        document.getElementById('msg').textContent = 'שגיאה בשליחה';
+      }
+    }
+  </script>
+</body>
+</html>

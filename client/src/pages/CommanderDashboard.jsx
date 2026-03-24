@@ -83,7 +83,13 @@ export default function CommanderDashboard() {
     if (!socket) return;
 
     function onOrefAlert(data) {
+      // Only allow specific alert types or ended event
+      const allowedTitles = [
+        "ירי רקטות וטילים",
+        "חדירת כלי טיס עוין",
+      ];
       if (data.status === "active") {
+        if (!allowedTitles.includes(data.title)) return;
         setOrefAlert({ title: data.title, desc: data.desc });
         setOrefCities(data.cities);
         showToast(`${data.title || "התראה"}: ${data.cities.join(", ")}`, "alert");
