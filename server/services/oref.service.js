@@ -1,4 +1,8 @@
 import { sendSms } from "./sms.service.js";
+import { upsertOrefAlerts, cleanExpiredOrefAlerts } from "./orefAlert.service.js";
+import { getSoldiersByCities, getCommandersWithSmsAlerts } from "./user.service.js";
+import { createEvent } from "./event.service.js";
+import { createSoldierStatuses } from "./soldierStatus.service.js";
 
 // פונקציה זו נמחקה כי יש כפילות בראש הקובץ
 let previousAlertCities = [];
@@ -41,9 +45,9 @@ export function startOrefPolling(io) {
           isAlertActive = true;
           previousAlertCities = cities;
 
-          // Persist alerts in DB
-          await upsertOrefAlerts(cities);
-          await removeOrefAlerts(cities);
+          // Persist alerts in DB (with title & desc for 10 min display)
+          await upsertOrefAlerts(cities, title, desc);
+          await cleanExpiredOrefAlerts();
 
           console.log(`[Oref] ${title} - ${cities.join(", ")}`);
 
@@ -79,6 +83,24 @@ export function startOrefPolling(io) {
                   console.error(`SMS failed for ${soldier.phone}:`, e.message);
                 }
               }
+            }
+
+            // שליחת SMS למפקדים הרשומים לקבלת התראות
+            try {
+              const smsCommanders = await getCommandersWithSmsAlerts();
+              const soldierCities = [...new Set(soldiers.map((s) => s.city))];
+              const affectedCitiesStr = soldierCities.join(", ");
+              for (const cmd of smsCommanders) {
+                if (cmd.phone) {
+                  try {
+                    await sendSms(cmd.phone, `${title} באזור: ${affectedCitiesStr}. ${soldiers.length} חיילים באזור המאוים.`);
+                  } catch (e) {
+                    console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error("[Oref] Failed to send commander SMS:", e.message);
             }
           }
         }

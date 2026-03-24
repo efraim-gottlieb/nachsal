@@ -41,15 +41,6 @@ app.set("io", io);
 app.use(cors());
 app.use(express.json());
 
-// בדיקת שליחת SMS ידנית - לפני השרת הסטטי
-app.get("/api/test-sms", async (req, res) => {
-  try {
-    const result = await sendSms("0549674146", "בדיקת SMS מהמערכת nachsal");
-    res.json({ ok: true, result });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // Serve React build
 const clientDist = join(__dirname, "..", "client", "dist");
@@ -61,20 +52,89 @@ app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/status", statusRoutes);
 
+// Oref alerts - persistent (last 10 min)
+import { getRecentOrefAlerts } from "./services/orefAlert.service.js";
+import auth from "./middlewares/auth.middleware.js";
+app.get("/api/oref-alerts", auth, async (req, res) => {
+  const alerts = await getRecentOrefAlerts();
+  res.json(alerts);
+});
+
 app.get("/demo-oref-alert", async (req, res) => {
   try {
     const io = req.app.get("io");
-    const cities = ["ירושלים", "תל אביב"];
-    // Use the same title as real Oref alert
-    await io.to("commanders").emit("oref_alert", {
+    const cities = req.query.cities ? req.query.cities.split(",") : ["ירושלים", "תל אביב"];
+    const title = "ירי רקטות וטילים";
+    const desc = "התראת דמו ידנית";
+
+    // שמירה ב-DB כמו התראה אמיתית
+    const { upsertOrefAlerts: upsert, cleanExpiredOrefAlerts: clean } = await import("./services/orefAlert.service.js");
+    const { getSoldiersByCities, getCommandersWithSmsAlerts } = await import("./services/user.service.js");
+
+    await upsert(cities, title, desc);
+    await clean();
+
+    console.log(`[Demo Oref] ${title} - ${cities.join(", ")}`);
+
+    // שליחת socket למפקדים
+    io.to("commanders").emit("oref_alert", {
       status: "active",
       cities,
-      title: "ירי רקטות וטילים",
-      desc: "התראת דמו ידנית",
+      title,
+      desc,
       timestamp: new Date(),
     });
-    // לא ליצור אירוע אמיתי במערכת
-    res.json({ ok: true, message: "התראת דמו נשלחה לירושלים ותל אביב (ללא יצירת אירוע)" });
+
+    // מציאת חיילים מושפעים
+    const soldiers = await getSoldiersByCities(cities);
+    if (soldiers.length > 0) {
+      io.to("commanders").emit("oref_soldiers_affected", {
+        cities,
+        title,
+        soldiers: soldiers.map((s) => ({
+          _id: s._id,
+          name: s.name,
+          city: s.city,
+          phone: s.phone,
+        })),
+      });
+
+      // שליחת SMS לחיילים
+      for (const soldier of soldiers) {
+        if (soldier.phone) {
+          try {
+            await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! אנא אשר מצבך במערכת.`);
+          } catch (e) {
+            console.error(`SMS failed for ${soldier.phone}:`, e.message);
+          }
+        }
+      }
+
+      // שליחת SMS למפקדים עם התראות
+      try {
+        const smsCommanders = await getCommandersWithSmsAlerts();
+        const soldierCities = [...new Set(soldiers.map((s) => s.city))];
+        const affectedCitiesStr = soldierCities.join(", ");
+        for (const cmd of smsCommanders) {
+          if (cmd.phone) {
+            try {
+              await sendSms(cmd.phone, `${title} באזור: ${affectedCitiesStr}. ${soldiers.length} חיילים באזור המאוים.`);
+            } catch (e) {
+              console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("[Demo Oref] Failed to send commander SMS:", e.message);
+      }
+    }
+
+    res.json({
+      ok: true,
+      cities,
+      soldiers_affected: soldiers.length,
+      message: `התראת דמו הופעלה ל: ${cities.join(", ")}`,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

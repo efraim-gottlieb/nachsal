@@ -81,3 +81,27 @@ export async function deleteSoldierById(id) {
   const result = await User.deleteOne({ _id: id });
   return result;
 }
+
+export async function getAllCommanders() {
+  const commanders = await User.find({ user_type: { $in: ["commander", "admin"] } }).select("-password");
+  return commanders;
+}
+
+export async function updateCommanderById(id, updates) {
+  const user = await User.findOneAndUpdate(
+    { _id: id, user_type: { $in: ["commander", "admin"] } },
+    updates,
+    { new: true }
+  ).select("-password");
+  return user;
+}
+
+export async function deleteCommanderById(id) {
+  const result = await User.deleteOne({ _id: id, user_type: { $in: ["commander", "admin"] } });
+  return result;
+}
+
+export async function getCommandersWithSmsAlerts() {
+  const commanders = await User.find({ user_type: { $in: ["commander", "admin"] }, sms_alerts: true }).select("-password");
+  return commanders;
+}

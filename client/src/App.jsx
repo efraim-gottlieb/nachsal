@@ -3,6 +3,7 @@ import { useAuth } from "./context/AuthContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import CommanderDashboard from "./pages/CommanderDashboard";
+import CommanderManagement from "./pages/CommanderManagement";
 import SoldierPanel from "./pages/SoldierPanel";
 
 function ProtectedRoute({ children, allowedTypes }) {
@@ -22,6 +23,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedTypes={["commander", "admin"]}>
             <CommanderDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/commanders"
+        element={
+          <ProtectedRoute allowedTypes={["commander", "admin"]}>
+            <CommanderManagement />
           </ProtectedRoute>
         }
       />

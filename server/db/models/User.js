@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
     ref: "User",
     default: null,
   },
+  sms_alerts: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export const User = mongoose.model("User", userSchema);

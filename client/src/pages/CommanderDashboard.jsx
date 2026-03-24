@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
@@ -28,12 +28,18 @@ export default function CommanderDashboard() {
   const [orefAlert, setOrefAlert] = useState(null);
   const [orefCities, setOrefCities] = useState([]);
   const [persistentOrefCities, setPersistentOrefCities] = useState([]);
-  const orefTimeouts = useRef({});
-    // Load persistent Oref alerts from backend
+    // Load persistent Oref alerts from backend (last 10 min)
     const loadPersistentOrefAlerts = useCallback(async () => {
       try {
         const alerts = await api.getOrefAlerts();
         setPersistentOrefCities(alerts.map(a => a.city));
+        // Restore alert title/desc from most recent persisted alert
+        if (alerts.length > 0) {
+          const latest = alerts.reduce((a, b) =>
+            new Date(a.receivedAt) > new Date(b.receivedAt) ? a : b
+          );
+          setOrefAlert({ title: latest.title, desc: latest.desc });
+        }
       } catch (err) {
         // ignore
       }
@@ -111,22 +117,14 @@ export default function CommanderDashboard() {
         setOrefCities(data.cities);
         showToast(`${data.title || "התראה"}: ${data.cities.join(", ")}`, "alert");
         loadSoldierCities();
-        // Set timeouts for each city to remove after 15 min
-        data.cities.forEach(city => {
-          if (orefTimeouts.current[city]) clearTimeout(orefTimeouts.current[city]);
-          orefTimeouts.current[city] = setTimeout(() => {
-            setPersistentOrefCities(prev => prev.filter(c => c !== city));
-          }, 15 * 60 * 1000);
-        });
-        // Also reload persistent alerts from backend
+        // Reload persistent alerts from backend (saved for 10 min)
         loadPersistentOrefAlerts();
       } else {
         showToast(`האירוע הסתיים: ${data.cities.join(", ")}`, "success");
         setTimeout(() => {
-          setOrefAlert(null);
           setOrefCities([]);
         }, 10000);
-        // Reload persistent alerts
+        // Reload persistent alerts (will still show for remaining time)
         loadPersistentOrefAlerts();
       }
     }
@@ -325,6 +323,7 @@ export default function CommanderDashboard() {
         title="🛡️ מערכת נכס״ל - דשבורד מפקד"
         userName={user?.name}
         onLogout={handleLogout}
+        navLinks={[{ to: "/commanders", label: "ניהול מפקדים" }]}
       />
 
       <div className="container">
@@ -366,6 +365,21 @@ export default function CommanderDashboard() {
             {orefCities.length > 0 && (
               <div className="alert-cities-list">
                 {orefCities
+                  .filter((city) => soldierCities.includes(city))
+                  .map((city) => (
+                  <button
+                    key={city}
+                    className="city-tag"
+                    onClick={() => triggerEventForCity(city)}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            )}
+            {persistentOrefCities.length > 0 && orefCities.length === 0 && (
+              <div className="alert-cities-list" style={{ marginTop: 8 }}>
+                {persistentOrefCities
                   .filter((city) => soldierCities.includes(city))
                   .map((city) => (
                   <button

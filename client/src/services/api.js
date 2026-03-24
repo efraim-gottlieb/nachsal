@@ -120,6 +120,27 @@ class API {
   async deleteSoldier(id) {
     return this.request("DELETE", `/api/users/${id}`);
   }
+
+  // Commanders
+  async getAllCommanders() {
+    return this.request("GET", "/api/users/commanders");
+  }
+
+  async createCommander(data) {
+    return this.request("POST", "/api/users/commanders", data);
+  }
+
+  async updateCommander(id, data) {
+    return this.request("PUT", `/api/users/commanders/${id}`, data);
+  }
+
+  async deleteCommander(id) {
+    return this.request("DELETE", `/api/users/commanders/${id}`);
+  }
+
+  async toggleCommanderSms(id, sms_alerts) {
+    return this.request("PUT", `/api/users/commanders/${id}/sms`, { sms_alerts });
+  }
 }
 
 export const api = new API();
