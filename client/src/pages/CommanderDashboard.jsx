@@ -42,6 +42,9 @@ export default function CommanderDashboard() {
   const [eventStatuses, setEventStatuses] = useState({});
   const [pendingCount, setPendingCount] = useState(0);
   const [okCount, setOkCount] = useState(0);
+  const [editingSoldier, setEditingSoldier] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", phone: "", city: "", email: "" });
+  const [soldierSearch, setSoldierSearch] = useState("");
 
   const loadSoldiers = useCallback(async () => {
     try {
@@ -258,6 +261,45 @@ export default function CommanderDashboard() {
     navigate("/");
   }
 
+  function openEditSoldier(soldier) {
+    setEditingSoldier(soldier);
+    setEditForm({
+      name: soldier.name,
+      phone: soldier.phone,
+      city: soldier.city || "",
+      email: soldier.email,
+    });
+  }
+
+  async function handleSaveEdit() {
+    try {
+      await api.updateSoldier(editingSoldier._id, editForm);
+      showToast("פרטי החייל עודכנו בהצלחה", "success");
+      setEditingSoldier(null);
+      await loadData();
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  async function handleDeleteSoldier(soldier) {
+    if (!window.confirm(`האם למחוק את ${soldier.name}?`)) return;
+    try {
+      await api.deleteSoldier(soldier._id);
+      showToast("החייל נמחק בהצלחה", "success");
+      await loadData();
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  const filteredSoldiers = soldiers.filter((s) =>
+    s.name.includes(soldierSearch) ||
+    s.phone.includes(soldierSearch) ||
+    (s.city || "").includes(soldierSearch) ||
+    s.email.includes(soldierSearch)
+  );
+
   return (
     <div>
       <ToastContainer toasts={toasts} />
@@ -429,28 +471,110 @@ export default function CommanderDashboard() {
             <SoldiersMap soldiers={soldiers} activeCities={activeCities} />
           </div>
           <div className="card">
-            <h2>👥 חיילים</h2>
-            <ul className="soldier-list">
-              {soldiers.length === 0 ? (
-                <li style={{ padding: 20, textAlign: "center", color: "#888" }}>
-                  אין חיילים רשומים
-                </li>
-              ) : (
-                soldiers.map((s) => (
-                  <li key={s._id} className="soldier-item">
-                    <div className="info">
-                      <span className="name">{s.name}</span>
-                      <span className="details">
-                        {s.city || "לא עודכן מיקום"} | {s.phone}
-                      </span>
-                    </div>
-                  </li>
-                ))
-              )}
-            </ul>
+            <h2>👥 ניהול חיילים</h2>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="חיפוש לפי שם, טלפון, עיר או אימייל..."
+                value={soldierSearch}
+                onChange={(e) => setSoldierSearch(e.target.value)}
+              />
+            </div>
+            {filteredSoldiers.length === 0 ? (
+              <p style={{ padding: 20, textAlign: "center", color: "#888" }}>
+                {soldiers.length === 0 ? "אין חיילים רשומים" : "לא נמצאו תוצאות"}
+              </p>
+            ) : (
+              <div className="soldiers-table-wrapper">
+                <table className="soldiers-table">
+                  <thead>
+                    <tr>
+                      <th>שם</th>
+                      <th>אימייל</th>
+                      <th>טלפון</th>
+                      <th>עיר</th>
+                      <th>פעולות</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSoldiers.map((s) => (
+                      <tr key={s._id}>
+                        <td>{s.name}</td>
+                        <td>{s.email}</td>
+                        <td>{s.phone}</td>
+                        <td>{s.city || "לא עודכן"}</td>
+                        <td className="actions-cell">
+                          <button
+                            className="btn btn-small btn-primary"
+                            onClick={() => openEditSoldier(s)}
+                          >
+                            ערוך
+                          </button>
+                          <button
+                            className="btn btn-small btn-danger"
+                            onClick={() => handleDeleteSoldier(s)}
+                          >
+                            מחק
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Edit Soldier Modal */}
+      {editingSoldier && (
+        <div className="modal-overlay" onClick={() => setEditingSoldier(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>✏️ עריכת חייל</h2>
+            <div className="form-group">
+              <label>שם</label>
+              <input
+                type="text"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>אימייל</label>
+              <input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>טלפון</label>
+              <input
+                type="tel"
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>עיר</label>
+              <input
+                type="text"
+                value={editForm.city}
+                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+              />
+            </div>
+            <div className="btn-group" style={{ marginTop: 16 }}>
+              <button className="btn btn-success" onClick={handleSaveEdit}>
+                שמור
+              </button>
+              <button className="btn btn-danger" onClick={() => setEditingSoldier(null)}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

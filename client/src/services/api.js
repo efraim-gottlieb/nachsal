@@ -108,6 +108,14 @@ class API {
   async getPendingSurveys() {
     return this.request("GET", "/api/status/pending");
   }
+
+  async updateSoldier(id, data) {
+    return this.request("PUT", `/api/users/${id}`, data);
+  }
+
+  async deleteSoldier(id) {
+    return this.request("DELETE", `/api/users/${id}`);
+  }
 }
 
 export const api = new API();

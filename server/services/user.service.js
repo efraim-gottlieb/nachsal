@@ -67,3 +67,17 @@ export async function updateUserLocation(userId, city, lat, lng) {
   ).select("-password");
   return user;
 }
+
+export async function updateSoldierById(id, updates) {
+  const user = await User.findOneAndUpdate(
+    { _id: id },
+    updates,
+    { new: true }
+  ).select("-password");
+  return user;
+}
+
+export async function deleteSoldierById(id) {
+  const result = await User.deleteOne({ _id: id });
+  return result;
+}

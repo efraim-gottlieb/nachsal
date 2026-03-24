@@ -11,5 +11,7 @@ router.get("/soldiers", auth, asyncHandler(userControllers.listAllSoldiers));
 router.get("/my-soldiers", auth, asyncHandler(userControllers.getMySoldiers));
 router.get("/soldier-cities", auth, asyncHandler(userControllers.listSoldierCities));
 router.get("/:id", auth, asyncHandler(userControllers.getSoldier));
+router.put("/:id", auth, asyncHandler(userControllers.updateSoldier));
+router.delete("/:id", auth, asyncHandler(userControllers.deleteSoldier));
 
 export default router;

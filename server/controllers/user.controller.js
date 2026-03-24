@@ -16,6 +16,8 @@ import {
   updateUserLocation,
   getUserById,
   getSoldierCities,
+  updateSoldierById,
+  deleteSoldierById,
 } from "../services/user.service.js";
 
 export async function updateLocation(req, res) {
@@ -79,4 +81,38 @@ export async function listSoldierCities(req, res) {
 
   const cities = await getSoldierCities();
   res.json(cities);
+}
+
+export async function updateSoldier(req, res) {
+  if (!["commander", "admin"].includes(req.user.user_type)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const { id } = req.params;
+  const { name, phone, city, email } = req.body;
+
+  const updates = {};
+  if (name) updates.name = name;
+  if (phone) updates.phone = phone;
+  if (city !== undefined) updates.city = city;
+  if (email) updates.email = email;
+
+  const soldier = await updateSoldierById(id, updates);
+  if (!soldier) {
+    return res.status(404).json({ message: "Soldier not found" });
+  }
+  res.json(soldier);
+}
+
+export async function deleteSoldier(req, res) {
+  if (!["commander", "admin"].includes(req.user.user_type)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const { id } = req.params;
+  const result = await deleteSoldierById(id);
+  if (result.deletedCount === 0) {
+    return res.status(404).json({ message: "Soldier not found" });
+  }
+  res.json({ message: "Soldier deleted" });
 }

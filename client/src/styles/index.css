@@ -200,7 +200,9 @@ body {
   text-align: center;
 }
 .modal h2 { margin-bottom: 10px; color: #dc2626; }
+.modal h2:first-child { color: #16213e; }
 .modal p { margin-bottom: 24px; color: #555; font-size: 16px; }
+.modal .form-group { text-align: right; }
 .modal .btn-group { display: flex; gap: 12px; justify-content: center; }
 .modal .btn-group .btn { min-width: 140px; padding: 14px; font-size: 16px; }
 
@@ -312,10 +314,46 @@ body {
   gap: 8px;
 }
 
+/* Soldiers Table */
+.soldiers-table-wrapper {
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.soldiers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.soldiers-table th {
+  background: #f0f2f5;
+  color: #16213e;
+  font-weight: 700;
+  padding: 10px 14px;
+  text-align: right;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.soldiers-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.soldiers-table tr:hover td {
+  background: #f8fafc;
+}
+.soldiers-table .actions-cell {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .header { flex-direction: column; gap: 10px; }
   .landing-buttons { flex-direction: column; }
+  .soldiers-table { font-size: 12px; }
+  .soldiers-table th, .soldiers-table td { padding: 8px 6px; }
 }
