@@ -45,6 +45,4 @@ export async function sendSms(phone, message) {
       throw new Error(data.message || "Failed to send SMS");
     }
     return data;
-  console.log("SMS API response:", res.data);
-  return res.data;
 }

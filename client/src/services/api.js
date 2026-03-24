@@ -1,6 +1,10 @@
 const API_BASE = "";
 
 class API {
+  async updatePhone(phone) {
+    return this.request("PUT", "/api/users/phone", { phone });
+  }
+
   constructor() {
     this.token = localStorage.getItem("token");
   }

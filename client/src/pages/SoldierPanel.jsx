@@ -8,8 +8,18 @@ import ToastContainer from "../components/ToastContainer";
 import { useToast } from "../hooks/useToast";
 
 const quickCities = [
-  "תל אביב", "ירושלים", "חיפה", "באר שבע", "אשדוד", "אשקלון",
-  "נתניה", "הרצליה", "ראשון לציון", "פתח תקווה", "שדרות", "קריית שמונה",
+  "תל אביב",
+  "ירושלים",
+  "חיפה",
+  "באר שבע",
+  "אשדוד",
+  "אשקלון",
+  "נתניה",
+  "הרצליה",
+  "ראשון לציון",
+  "פתח תקווה",
+  "שדרות",
+  "קריית שמונה",
 ];
 
 export default function SoldierPanel() {
@@ -19,6 +29,7 @@ export default function SoldierPanel() {
   const { toasts, showToast } = useToast();
 
   const [cityInput, setCityInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [surveys, setSurveys] = useState([]);
   const [modalEvent, setModalEvent] = useState(null);
   const [respondedEvents, setRespondedEvents] = useState({});
@@ -38,7 +49,6 @@ export default function SoldierPanel() {
 
   useEffect(() => {
     if (!socket) return;
-
     function onNewSurvey(data) {
       showToast(data.message, "alert");
       setModalEvent(data);
@@ -47,13 +57,11 @@ export default function SoldierPanel() {
         return [{ event_id: data.event_id, message: data.message }, ...prev];
       });
     }
-
     function onEventEnded(data) {
       showToast(`האירוע הסתיים: ${data.cities.join(", ")}`, "success");
       setModalEvent(null);
       loadPendingSurveys();
     }
-
     socket.on("new_event_survey", onNewSurvey);
     socket.on("event_ended", onEventEnded);
     return () => {
@@ -84,6 +92,21 @@ export default function SoldierPanel() {
       setCityInput("");
       if (socket) socket.emit("update_city", { city });
       showToast(`מיקום עודכן ל${city}`, "success");
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
+  async function handleUpdatePhone(phone) {
+    if (!phone.trim()) {
+      showToast("נא להזין מספר טלפון", "warning");
+      return;
+    }
+    try {
+      const updated = await api.updatePhone(phone);
+      updateUser({ phone: updated.phone });
+      setPhoneInput("");
+      showToast("מספר הטלפון עודכן", "success");
     } catch (err) {
       showToast(err.message, "alert");
     }
@@ -123,8 +146,14 @@ export default function SoldierPanel() {
             >
               {responded ? (
                 <>
-                  <h3 style={{ color: responded === "ok" ? "#16a34a" : "#dc2626" }}>
-                    {responded === "ok" ? "✅ דיווחת שאתה בסדר" : "❌ דיווחת שאינך בסדר"}
+                  <h3
+                    style={{
+                      color: responded === "ok" ? "#16a34a" : "#dc2626",
+                    }}
+                  >
+                    {responded === "ok"
+                      ? "✅ דיווחת שאתה בסדר"
+                      : "❌ דיווחת שאינך בסדר"}
                   </h3>
                   <p>התשובה נשלחה למפקד</p>
                 </>
@@ -157,7 +186,7 @@ export default function SoldierPanel() {
           );
         })}
 
-        {/* Location */}
+        {/* Location & Phone */}
         <div className="location-card">
           <h3>📍 מיקום נוכחי</h3>
           <div className="current-location">{user?.city || "לא עודכן"}</div>
@@ -169,13 +198,33 @@ export default function SoldierPanel() {
               value={cityInput}
               onChange={(e) => setCityInput(e.target.value)}
             />
+            <button
+              className="btn btn-success"
+              onClick={() => handleUpdateLocation(cityInput)}
+              style={{ marginTop: 8 }}
+            >
+              עדכן מיקום
+            </button>
           </div>
-          <button
-            className="btn btn-success"
-            onClick={() => handleUpdateLocation(cityInput)}
-          >
-            עדכן מיקום
-          </button>
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <label>עדכון מספר טלפון</label>
+            <input
+              type="tel"
+              placeholder="הזן מספר טלפון"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+            />
+            <button
+              className="btn btn-primary"
+              onClick={() => handleUpdatePhone(phoneInput)}
+              style={{ marginTop: 8 }}
+            >
+              עדכן טלפון
+            </button>
+            <div style={{ marginTop: 4, fontSize: 14, color: "#555" }}>
+              מספר נוכחי: {user?.phone || "לא עודכן"}
+            </div>
+          </div>
         </div>
 
         {/* Quick Cities */}

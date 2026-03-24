@@ -1,3 +1,11 @@
+export async function updateUserPhone(userId, phone) {
+  const user = await User.findOneAndUpdate(
+    { _id: userId },
+    { phone },
+    { new: true }
+  ).select("-password");
+  return user;
+}
 import { User } from "../db/models/User.js";
 import { encrypt } from "../utils/hash.js";
 

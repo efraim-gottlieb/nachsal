@@ -1,3 +1,15 @@
+import { updateUserPhone } from "../services/user.service.js";
+export async function updatePhone(req, res) {
+  const { phone } = req.body;
+  if (!phone) {
+    return res.status(400).json({ message: "Phone is required" });
+  }
+  const user = await updateUserPhone(req.user._id, phone);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+  res.json(user);
+}
 import {
   getAllSoldiers,
   getSoldiersByCommander,
