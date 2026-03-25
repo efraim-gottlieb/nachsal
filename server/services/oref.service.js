@@ -1,8 +1,6 @@
 import { sendSms } from "./sms.service.js";
 import { upsertOrefAlerts, cleanExpiredOrefAlerts } from "./orefAlert.service.js";
 import { getSoldiersByCities, getCommandersWithSmsAlerts, getSoldierCities } from "./user.service.js";
-import { createEvent } from "./event.service.js";
-import { createSoldierStatuses } from "./soldierStatus.service.js";
 
 let previousAlertIds = new Set();
 let isAlertActive = false;
@@ -79,22 +77,13 @@ export async function processOrefAlert(alertData, io) {
     timestamp: new Date(),
   });
 
-  // Find soldiers in affected cities (fuzzy match) and create event
+  // Find soldiers in affected cities to inform commanders
   const soldierCitiesList = await getSoldierCities();
   const matchedCities = matchAlertCitiesToSoldierCities(cities, soldierCitiesList);
   const soldiers = await getSoldiersByCities(matchedCities);
 
   if (soldiers.length > 0) {
-    const event = await createEvent(matchedCities, null, true);
-    const soldierIds = soldiers.map((s) => s._id);
-    await createSoldierStatuses(event._id, soldierIds);
-
-    io.to("commanders").emit("event_created", {
-      event_id: event._id,
-      cities: matchedCities,
-      oref_alert: true,
-    });
-
+    // Notify commanders about affected soldiers (no event/SMS to soldiers yet)
     io.to("commanders").emit("oref_soldiers_affected", {
       cities: matchedCities,
       title,
@@ -105,27 +94,12 @@ export async function processOrefAlert(alertData, io) {
         phone: s.phone,
       })),
     });
+  }
 
-    for (const soldier of soldiers) {
-      io.to(`user_${soldier._id}`).emit("new_event_survey", {
-        event_id: event._id,
-        cities: event.cities,
-        message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`,
-      });
-    }
-
-    for (const soldier of soldiers) {
-      if (soldier.phone) {
-        try {
-          await sendSms(soldier.phone, `🛡️ מערכת נכס"ל\nשלום ${soldier.name}, התראה פעילה באזור ${soldier.city}!\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.`);
-        } catch (e) {
-          console.error(`SMS failed for ${soldier.phone}:`, e.message);
-        }
-      }
-    }
-
-    try {
-      const smsCommanders = await getCommandersWithSmsAlerts();
+  // SMS only to commanders
+  try {
+    const smsCommanders = await getCommandersWithSmsAlerts();
+    if (smsCommanders.length > 0) {
       const soldiersByCity = {};
       for (const s of soldiers) {
         soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
@@ -133,7 +107,9 @@ export async function processOrefAlert(alertData, io) {
       const cityBreakdown = Object.entries(soldiersByCity)
         .map(([city, count]) => `${city} - ${count} חיילים`)
         .join("\n");
-      const cmdMessage = `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`;
+      const cmdMessage = soldiers.length > 0
+        ? `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`
+        : `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cities.join(", ")}`;
       for (const cmd of smsCommanders) {
         if (cmd.phone) {
           try {
@@ -143,9 +119,9 @@ export async function processOrefAlert(alertData, io) {
           }
         }
       }
-    } catch (e) {
-      console.error("[Oref] Failed to send commander SMS:", e.message);
     }
+  } catch (e) {
+    console.error("[Oref] Failed to send commander SMS:", e.message);
   }
 }
 
@@ -190,34 +166,3 @@ export function startOrefPolling(io) {
   console.log(`[Oref] Polling started via Tzeva Adom API (every ${interval}ms)`);
 }
 
-export async function triggerEventFromOref(cities, io) {
-  // Create a system event from Oref alert
-  const event = await createEvent(cities, null, true);
-
-  const soldiers = await getSoldiersByCities(cities);
-  if (soldiers.length > 0) {
-    const soldierIds = soldiers.map((s) => s._id);
-    await createSoldierStatuses(event._id, soldierIds);
-
-    for (const soldier of soldiers) {
-      io.to(`user_${soldier._id}`).emit("new_event_survey", {
-        event_id: event._id,
-        cities: event.cities,
-        message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`,
-      });
-    }
-
-    // Send SMS to all soldiers
-    for (const soldier of soldiers) {
-      if (soldier.phone) {
-        try {
-          await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`);
-        } catch (e) {
-          console.error(`SMS failed for ${soldier.phone}:`, e.message);
-        }
-      }
-    }
-
-    return { event, affected_soldiers: soldiers.length };
-}
-}

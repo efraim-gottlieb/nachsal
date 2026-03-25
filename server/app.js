@@ -1,5 +1,5 @@
 // --- DEMO OREF ALERT ENDPOINT (no auth) ---
-import { triggerEventFromOref } from "./services/oref.service.js";
+
 import { sendSms } from "./services/sms.service.js";
 
 // Endpoint to trigger fake Oref alert for Jerusalem and Tel Aviv
@@ -88,7 +88,7 @@ app.get("/demo-oref-alert", async (req, res) => {
       timestamp: new Date(),
     });
 
-    // מציאת חיילים מושפעים
+    // מציאת חיילים מושפעים - רק להציג למפקדים, לא לשלוח SMS לחיילים
     const soldiers = await getSoldiersByCities(cities);
     if (soldiers.length > 0) {
       io.to("commanders").emit("oref_soldiers_affected", {
@@ -101,21 +101,12 @@ app.get("/demo-oref-alert", async (req, res) => {
           phone: s.phone,
         })),
       });
+    }
 
-      // שליחת SMS לחיילים
-      for (const soldier of soldiers) {
-        if (soldier.phone) {
-          try {
-            await sendSms(soldier.phone, `🛡️ מערכת נכס"ל\nשלום ${soldier.name}, התראה פעילה באזור ${soldier.city}!\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.`);
-          } catch (e) {
-            console.error(`SMS failed for ${soldier.phone}:`, e.message);
-          }
-        }
-      }
-
-      // שליחת SMS למפקדים עם התראות
-      try {
-        const smsCommanders = await getCommandersWithSmsAlerts();
+    // שליחת SMS רק למפקדים
+    try {
+      const smsCommanders = await getCommandersWithSmsAlerts();
+      if (smsCommanders.length > 0) {
         const soldiersByCity = {};
         for (const s of soldiers) {
           soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
@@ -123,7 +114,9 @@ app.get("/demo-oref-alert", async (req, res) => {
         const cityBreakdown = Object.entries(soldiersByCity)
           .map(([city, count]) => `${city} - ${count} חיילים`)
           .join("\n");
-        const cmdMessage = `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`;
+        const cmdMessage = soldiers.length > 0
+          ? `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`
+          : `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cities.join(", ")}`;
         for (const cmd of smsCommanders) {
           if (cmd.phone) {
             try {
@@ -133,9 +126,9 @@ app.get("/demo-oref-alert", async (req, res) => {
             }
           }
         }
-      } catch (e) {
-        console.error("[Demo Oref] Failed to send commander SMS:", e.message);
       }
+    } catch (e) {
+      console.error("[Demo Oref] Failed to send commander SMS:", e.message);
     }
 
     res.json({
