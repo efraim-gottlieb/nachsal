@@ -108,14 +108,14 @@ export default function CommanderManagement() {
       />
 
       <div className="container">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12 }}>
           <input
             type="text"
             placeholder="חיפוש מפקד..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="form-input"
-            style={{ maxWidth: 300 }}
+            style={{ maxWidth: 300, flex: 1 }}
           />
           <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
             + הוסף מפקד
@@ -171,37 +171,45 @@ export default function CommanderManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>הוספת מפקד חדש</h3>
             <form onSubmit={handleAddCommander}>
-              <input
-                className="form-input"
-                placeholder="שם מלא"
-                value={addForm.name}
-                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                required
-              />
-              <input
-                className="form-input"
-                type="email"
-                placeholder="אימייל"
-                value={addForm.email}
-                onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                required
-              />
-              <input
-                className="form-input"
-                type="password"
-                placeholder="סיסמה"
-                value={addForm.password}
-                onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                required
-              />
-              <input
-                className="form-input"
-                placeholder="טלפון"
-                value={addForm.phone}
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  placeholder="שם מלא"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="אימייל"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  type="password"
+                  placeholder="סיסמה"
+                  value={addForm.password}
+                  onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  placeholder="טלפון"
+                  value={addForm.phone}
                 onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
                 required
               />
-              <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0", color: "var(--text-secondary)" }}>
                 <input
                   type="checkbox"
                   checked={addForm.sms_alerts}
@@ -224,29 +232,35 @@ export default function CommanderManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>עריכת מפקד</h3>
             <form onSubmit={handleEditCommander}>
-              <input
-                className="form-input"
-                placeholder="שם מלא"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                required
-              />
-              <input
-                className="form-input"
-                type="email"
-                placeholder="אימייל"
-                value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                required
-              />
-              <input
-                className="form-input"
-                placeholder="טלפון"
-                value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                required
-              />
-              <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  placeholder="שם מלא"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  type="email"
+                  placeholder="אימייל"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  className="form-input"
+                  placeholder="טלפון"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  required
+                />
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0", color: "var(--text-secondary)" }}>
                 <input
                   type="checkbox"
                   checked={editForm.sms_alerts}

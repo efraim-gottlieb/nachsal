@@ -141,8 +141,8 @@ export default function SoldierPanel() {
               style={
                 responded
                   ? {
-                      borderColor: responded === "ok" ? "#16a34a" : "#dc2626",
-                      background: responded === "ok" ? "#f0fdf4" : "#fff5f5",
+                      borderColor: responded === "ok" ? "var(--green)" : "var(--red)",
+                      background: responded === "ok" ? "var(--green-dim)" : "var(--red-dim)",
                     }
                   : undefined
               }
@@ -151,7 +151,7 @@ export default function SoldierPanel() {
                 <>
                   <h3
                     style={{
-                      color: responded === "ok" ? "#16a34a" : "#dc2626",
+                      color: responded === "ok" ? "var(--green)" : "var(--red)",
                     }}
                   >
                     {responded === "ok"
@@ -224,7 +224,7 @@ export default function SoldierPanel() {
             >
               עדכן טלפון
             </button>
-            <div style={{ marginTop: 4, fontSize: 14, color: "#555" }}>
+            <div style={{ marginTop: 4, fontSize: 14, color: "var(--text-muted)" }}>
               מספר נוכחי: {user?.phone || "לא עודכן"}
             </div>
           </div>

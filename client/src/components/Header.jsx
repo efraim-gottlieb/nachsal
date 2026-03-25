@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 
 export default function Header({ title, userName, onLogout, navLinks }) {
   return (
-    <div className="header">
+    <header className="header">
       <h1>{title}</h1>
       <div className="user-info">
         {navLinks && navLinks.map((link, i) => (
-          <Link key={i} to={link.to} className="btn btn-small" style={{ marginLeft: 8 }}>
+          <Link key={i} to={link.to} className="btn btn-ghost btn-small">
             {link.label}
           </Link>
         ))}
@@ -15,6 +15,6 @@ export default function Header({ title, userName, onLogout, navLinks }) {
           יציאה
         </button>
       </div>
-    </div>
+    </header>
   );
 }

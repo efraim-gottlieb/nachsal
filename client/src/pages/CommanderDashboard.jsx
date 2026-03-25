@@ -358,12 +358,12 @@ export default function CommanderDashboard() {
             <div style={{ padding: 10, textAlign: "center", fontWeight: 600 }}>
               {orefAlert ? (
                 <>
-                  <span style={{ color: "#dc2626" }}>🚨 {orefAlert.title || "התראה פעילה!"}</span>
+                  <span style={{ color: "var(--red)" }}>🚨 {orefAlert.title || "התראה פעילה!"}</span>
                   <br />
-                  <small style={{ color: "#888" }}>{orefAlert.desc || ""}</small>
+                  <small style={{ color: "var(--text-muted)" }}>{orefAlert.desc || ""}</small>
                 </>
               ) : (
-                <span style={{ color: "#16a34a" }}>אין התראות פעילות</span>
+                <span style={{ color: "var(--green)" }}>אין התראות פעילות</span>
               )}
             </div>
             {orefCities.length > 0 && (
@@ -404,15 +404,15 @@ export default function CommanderDashboard() {
               <label>בחר ערים (לחץ לבחירה)</label>
               <div className="alert-cities-list" style={{ flexWrap: "wrap", gap: 6, marginTop: 6 }}>
                 {soldierCities.length === 0 ? (
-                  <span style={{ color: "#888", fontSize: 13 }}>אין חיילים עם עיר מוגדרת</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: 13 }}>אין חיילים עם עיר מוגדרת</span>
                 ) : (
                   soldierCities.map((city) => (
                     <button
                       key={city}
                       className="city-tag"
                       style={{
-                        background: selectedCities.includes(city) ? "#2563eb" : "#e5e7eb",
-                        color: selectedCities.includes(city) ? "#fff" : "#222",
+                        background: selectedCities.includes(city) ? "var(--accent)" : "var(--bg-input)",
+                        color: selectedCities.includes(city) ? "#fff" : "var(--text-secondary)",
                       }}
                       onClick={() => toggleCity(city)}
                     >
@@ -435,7 +435,7 @@ export default function CommanderDashboard() {
         <div className="card">
           <h2>📋 אירועים פעילים</h2>
           {events.length === 0 ? (
-            <p style={{ color: "#888", textAlign: "center" }}>אין אירועים פעילים</p>
+            <p style={{ color: "var(--text-muted)", textAlign: "center" }}>אין אירועים פעילים</p>
           ) : (
             events.map((event) => (
               <div key={event._id} className="event-card">
@@ -449,18 +449,18 @@ export default function CommanderDashboard() {
                         borderRadius: 12,
                         fontSize: 13,
                         fontWeight: 600,
-                        background: eventStatuses[event._id].allOk ? "#dcfce7" : "#fee2e2",
-                        color: eventStatuses[event._id].allOk ? "#16a34a" : "#dc2626",
+                        background: eventStatuses[event._id].allOk ? "var(--green-dim)" : "var(--red-dim)",
+                        color: eventStatuses[event._id].allOk ? "var(--green)" : "var(--red)",
                       }}>
                         {eventStatuses[event._id].allOk ? "כולם בסדר ✅" : "לא כולם בסדר ❌"}
                       </span>
                     )}
                     <br />
-                    <small style={{ color: "#888" }}>
+                    <small style={{ color: "var(--text-muted)" }}>
                       {new Date(event.createdAt).toLocaleString("he-IL")}
                     </small>
                     {event.oref_alert && (
-                      <span style={{ color: "#dc2626", fontSize: 12 }}>
+                      <span style={{ color: "var(--red)", fontSize: 12 }}>
                         {" "}
                         (התראת פיקוד העורף)
                       </span>
@@ -488,7 +488,7 @@ export default function CommanderDashboard() {
                     style={{ marginTop: 10, maxHeight: 200, overflowY: "auto" }}
                   >
                     {eventStatuses[event._id].statuses.length === 0 ? (
-                      <li style={{ padding: 10, color: "#888", fontSize: 13 }}>
+                      <li style={{ padding: 10, color: "var(--text-muted)", fontSize: 13 }}>
                         אין חיילים מושפעים
                       </li>
                     ) : (
@@ -520,7 +520,7 @@ export default function CommanderDashboard() {
             <SoldiersMap soldiers={soldiers} activeCities={activeCities} />
           </div>
           <div className="card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "2px solid #f0f2f5", paddingBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--border)", paddingBottom: 10 }}>
               <h2 style={{ margin: 0, border: "none", paddingBottom: 0 }}>👥 ניהול חיילים</h2>
               <button className="btn btn-success btn-small" onClick={() => setShowAddModal(true)}>
                 ➕ הוסף חייל
@@ -535,7 +535,7 @@ export default function CommanderDashboard() {
               />
             </div>
             {filteredSoldiers.length === 0 ? (
-              <p style={{ padding: 20, textAlign: "center", color: "#888" }}>
+              <p style={{ padding: 20, textAlign: "center", color: "var(--text-muted)" }}>
                 {soldiers.length === 0 ? "אין חיילים רשומים" : "לא נמצאו תוצאות"}
               </p>
             ) : (
