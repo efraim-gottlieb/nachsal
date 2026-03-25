@@ -60,6 +60,7 @@ export default function CommanderDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", password: "", phone: "", city: "" });
   const [notOkSoldiers, setNotOkSoldiers] = useState([]);
+  const [dismissedNotOk, setDismissedNotOk] = useState(new Set());
 
   const loadSoldiers = useCallback(async () => {
     try {
@@ -538,11 +539,11 @@ export default function CommanderDashboard() {
         </div>
 
         {/* Not OK Soldiers */}
-        {notOkSoldiers.length > 0 && (
+        {notOkSoldiers.filter((s) => !dismissedNotOk.has(s._id)).length > 0 && (
           <div className="card not-ok-panel">
             <h2>🚑 חיילים שדיווחו לא בסדר</h2>
             <ul className="soldier-list">
-              {notOkSoldiers.map((s) => (
+              {notOkSoldiers.filter((s) => !dismissedNotOk.has(s._id)).map((s) => (
                 <li key={s._id} className="soldier-item">
                   <div className="info">
                     <span className="name">{s.user_id?.name || "לא ידוע"}</span>
@@ -550,11 +551,22 @@ export default function CommanderDashboard() {
                       {s.user_id?.city || ""} | אירוע: {s.eventCities?.join(", ")}
                     </span>
                   </div>
-                  {s.user_id?.phone && (
-                    <a href={`tel:${s.user_id.phone}`} className="phone-link btn-phone">
-                      📞 {s.user_id.phone}
-                    </a>
-                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {s.user_id?.phone && (
+                      <a href={`tel:${s.user_id.phone}`} className="phone-link btn-phone">
+                        📞 {s.user_id.phone}
+                      </a>
+                    )}
+                    <button
+                      className="btn btn-small btn-success"
+                      onClick={() => {
+                        setDismissedNotOk((prev) => new Set([...prev, s._id]));
+                        showToast(`${s.user_id?.name || "חייל"} הוסר מהרשימה — טופל ✅`, "success");
+                      }}
+                    >
+                      טופל ✔
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
