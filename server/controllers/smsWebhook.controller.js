@@ -4,6 +4,7 @@ import {
   findActiveEventForSoldier,
   updateStatusFromSms,
 } from "../services/smsWebhook.service.js";
+import { sendSms } from "../services/sms.service.js";
 
 export async function handleIncomingSms(req, res) {
   const { message, phone } = req.body;
@@ -43,6 +44,17 @@ export async function handleIncomingSms(req, res) {
       soldier_city: soldier.city,
       status: updatedStatus.status,
     });
+  }
+
+  // שליחת SMS תגובה לחייל
+  try {
+    if (updatedStatus.status === "ok") {
+      await sendSms(localPhone, "👍");
+    } else if (updatedStatus.status === "not_ok") {
+      await sendSms(localPhone, "המפקד עודכן, תחזיק חזק!");
+    }
+  } catch (err) {
+    console.error(`[SMS-Webhook] Failed to send reply SMS to ${localPhone}:`, err.message);
   }
 
   res.json({ ok: true, action: "updated", status: updatedStatus.status });

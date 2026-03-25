@@ -78,7 +78,7 @@ export function startOrefPolling(io) {
             for (const soldier of soldiers) {
               if (soldier.phone) {
                 try {
-                  await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! אנא אשר מצבך במערכת.`);
+                  await sendSms(soldier.phone, `🛡️ מערכת נכס"ל\nשלום ${soldier.name}, התראה פעילה באזור ${soldier.city}!\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.`);
                 } catch (e) {
                   console.error(`SMS failed for ${soldier.phone}:`, e.message);
                 }
@@ -88,12 +88,18 @@ export function startOrefPolling(io) {
             // שליחת SMS למפקדים הרשומים לקבלת התראות
             try {
               const smsCommanders = await getCommandersWithSmsAlerts();
-              const soldierCities = [...new Set(soldiers.map((s) => s.city))];
-              const affectedCitiesStr = soldierCities.join(", ");
+              const soldiersByCity = {};
+              for (const s of soldiers) {
+                soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
+              }
+              const cityBreakdown = Object.entries(soldiersByCity)
+                .map(([city, count]) => `${city} - ${count} חיילים`)
+                .join("\n");
+              const cmdMessage = `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`;
               for (const cmd of smsCommanders) {
                 if (cmd.phone) {
                   try {
-                    await sendSms(cmd.phone, `${title} באזור: ${affectedCitiesStr}. ${soldiers.length} חיילים באזור המאוים.`);
+                    await sendSms(cmd.phone, cmdMessage);
                   } catch (e) {
                     console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
                   }

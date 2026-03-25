@@ -29,7 +29,7 @@ export async function triggerEvent(req, res) {
         io.to(`user_${soldier._id}`).emit("new_event_survey", {
           event_id: event._id,
           cities: event.cities,
-          message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`,
+          message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?` + "\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.",
         });
       }
 
@@ -45,7 +45,7 @@ export async function triggerEvent(req, res) {
     for (const soldier of soldiers) {
       if (soldier.phone) {
         try {
-          await sendSms(soldier.phone, `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?`);
+          await sendSms(soldier.phone, `🛡️ מערכת נכס"ל\nשלום ${soldier.name}, התראה פעילה באזור ${soldier.city}! האם אתה בסדר?\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.`);
         } catch (e) {
           console.error(`SMS failed for ${soldier.phone}:`, e.message);
         }
