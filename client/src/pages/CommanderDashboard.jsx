@@ -80,8 +80,10 @@ export default function CommanderDashboard() {
       let pending = 0;
       let ok = 0;
       for (const event of data) {
-        const statuses = await api.getEventStatuses(event._id);
-        setEventStatuses((prev) => ({ ...prev, [event._id]: statuses }));
+        const result = await api.getEventStatuses(event._id);
+        const statuses = Array.isArray(result) ? result : (result.statuses || []);
+        const allOk = Array.isArray(result) ? (statuses.length > 0 && statuses.every((s) => s.status === "ok")) : (result.allOk || false);
+        setEventStatuses((prev) => ({ ...prev, [event._id]: { statuses, allOk } }));
         pending += statuses.filter((s) => s.status === "pending").length;
         ok += statuses.filter((s) => s.status === "ok").length;
       }
@@ -237,8 +239,10 @@ export default function CommanderDashboard() {
     setExpandedEvents((prev) => ({ ...prev, [eventId]: !prev[eventId] }));
     if (!eventStatuses[eventId]) {
       try {
-        const statuses = await api.getEventStatuses(eventId);
-        setEventStatuses((prev) => ({ ...prev, [eventId]: statuses }));
+        const result = await api.getEventStatuses(eventId);
+        const statuses = Array.isArray(result) ? result : (result.statuses || []);
+        const allOk = Array.isArray(result) ? (statuses.length > 0 && statuses.every((s) => s.status === "ok")) : (result.allOk || false);
+        setEventStatuses((prev) => ({ ...prev, [eventId]: { statuses, allOk } }));
       } catch {
         showToast("שגיאה בטעינת סטטוסים", "alert");
       }
@@ -438,6 +442,19 @@ export default function CommanderDashboard() {
                 <div className="event-card-header">
                   <div>
                     <strong>{event.cities.join(", ")}</strong>
+                    {eventStatuses[event._id] && (
+                      <span style={{
+                        marginRight: 10,
+                        padding: "2px 10px",
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        background: eventStatuses[event._id].allOk ? "#dcfce7" : "#fee2e2",
+                        color: eventStatuses[event._id].allOk ? "#16a34a" : "#dc2626",
+                      }}>
+                        {eventStatuses[event._id].allOk ? "כולם בסדר ✅" : "לא כולם בסדר ❌"}
+                      </span>
+                    )}
                     <br />
                     <small style={{ color: "#888" }}>
                       {new Date(event.createdAt).toLocaleString("he-IL")}
@@ -465,17 +482,17 @@ export default function CommanderDashboard() {
                   </div>
                 </div>
 
-                {expandedEvents[event._id] && eventStatuses[event._id] && (
+                {expandedEvents[event._id] && eventStatuses[event._id]?.statuses && (
                   <ul
                     className="soldier-list"
                     style={{ marginTop: 10, maxHeight: 200, overflowY: "auto" }}
                   >
-                    {eventStatuses[event._id].length === 0 ? (
+                    {eventStatuses[event._id].statuses.length === 0 ? (
                       <li style={{ padding: 10, color: "#888", fontSize: 13 }}>
                         אין חיילים מושפעים
                       </li>
                     ) : (
-                      eventStatuses[event._id].map((s) => (
+                      eventStatuses[event._id].statuses.map((s) => (
                         <li key={s._id} className="soldier-item">
                           <div className="info">
                             <span className="name">{s.user_id?.name || "לא ידוע"}</span>

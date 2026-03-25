@@ -60,7 +60,10 @@ export default function SoldierPanel() {
     function onEventEnded(data) {
       showToast(`האירוע הסתיים: ${data.cities.join(", ")}`, "success");
       setModalEvent(null);
-      loadPendingSurveys();
+      setSurveys((prev) => prev.filter((s) => {
+        const eid = s.event_id?._id || s.event_id;
+        return eid !== data.event_id;
+      }));
     }
     socket.on("new_event_survey", onNewSurvey);
     socket.on("event_ended", onEventEnded);
