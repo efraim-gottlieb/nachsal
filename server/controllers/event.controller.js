@@ -17,6 +17,7 @@ export async function triggerEvent(req, res) {
 
   // Find soldiers in affected cities
   const soldiers = await getSoldiersByCities(cities);
+  console.log(`[triggerEvent] Event ${event._id} created for cities: ${cities.join(", ")}. Found ${soldiers.length} soldiers.`);
 
   if (soldiers.length > 0) {
     const soldierIds = soldiers.map((s) => s._id);
@@ -45,17 +46,14 @@ export async function triggerEvent(req, res) {
     for (const soldier of soldiers) {
       if (soldier.phone) {
         try {
+          console.log(`[triggerEvent] Sending SMS to ${soldier.name} (${soldier.phone})`);
           await sendSms(soldier.phone, `🛡️ מערכת נכס"ל\nשלום ${soldier.name}, התראה פעילה באזור ${soldier.city}! האם אתה בסדר?\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.`);
+          console.log(`[triggerEvent] SMS sent successfully to ${soldier.phone}`);
         } catch (e) {
-          console.error(`SMS failed for ${soldier.phone}:`, e.message);
+          console.error(`[triggerEvent] SMS failed for ${soldier.phone}:`, e.message);
         }
       }
     }
-
-    res.status(201).json({
-      event,
-      affected_soldiers: soldiers.length,
-    });
   }
 
   res.status(201).json({
