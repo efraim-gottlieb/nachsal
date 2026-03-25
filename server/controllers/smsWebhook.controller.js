@@ -7,9 +7,14 @@ import {
 import { sendSms } from "../services/sms.service.js";
 
 export async function handleIncomingSms(req, res) {
-  const { message, phone } = req.body;
+  console.log(`[SMS-Webhook] Raw body:`, JSON.stringify(req.body));
+
+  // 019 webhook may send different field names
+  const message = req.body.message || req.body.text || req.body.Message || req.body.Text || req.body.msg;
+  const phone = req.body.phone || req.body.sender || req.body.Phone || req.body.Sender || req.body.from || req.body.From;
 
   if (!message || !phone) {
+    console.log(`[SMS-Webhook] Missing fields. message=${message}, phone=${phone}`);
     return res.status(400).json({ message: "Missing message or phone" });
   }
 

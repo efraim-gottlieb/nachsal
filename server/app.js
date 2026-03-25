@@ -103,32 +103,32 @@ app.get("/demo-oref-alert", async (req, res) => {
       });
     }
 
-    // שליחת SMS רק למפקדים
-    try {
-      const smsCommanders = await getCommandersWithSmsAlerts();
-      if (smsCommanders.length > 0) {
-        const soldiersByCity = {};
-        for (const s of soldiers) {
-          soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
-        }
-        const cityBreakdown = Object.entries(soldiersByCity)
-          .map(([city, count]) => `${city} - ${count} חיילים`)
-          .join("\n");
-        const cmdMessage = soldiers.length > 0
-          ? `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`
-          : `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cities.join(", ")}`;
-        for (const cmd of smsCommanders) {
-          if (cmd.phone) {
-            try {
-              await sendSms(cmd.phone, cmdMessage);
-            } catch (e) {
-              console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+    // שליחת SMS רק למפקדים — רק אם יש חיילים באזור
+    if (soldiers.length > 0) {
+      try {
+        const smsCommanders = await getCommandersWithSmsAlerts();
+        if (smsCommanders.length > 0) {
+          const soldiersByCity = {};
+          for (const s of soldiers) {
+            soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
+          }
+          const cityBreakdown = Object.entries(soldiersByCity)
+            .map(([city, count]) => `${city} - ${count} חיילים`)
+            .join("\n");
+          const cmdMessage = `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`;
+          for (const cmd of smsCommanders) {
+            if (cmd.phone) {
+              try {
+                await sendSms(cmd.phone, cmdMessage);
+              } catch (e) {
+                console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+              }
             }
           }
         }
+      } catch (e) {
+        console.error("[Demo Oref] Failed to send commander SMS:", e.message);
       }
-    } catch (e) {
-      console.error("[Demo Oref] Failed to send commander SMS:", e.message);
     }
 
     res.json({

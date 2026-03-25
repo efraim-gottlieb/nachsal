@@ -3,6 +3,12 @@ import { Event } from "../db/models/Event.js";
 import { SoldierStatus } from "../db/models/SoldierStatus.js";
 
 export function convertPhoneToLocal(phone) {
+  if (!phone) return phone;
+  // Handle +972, 972, 0 formats
+  phone = phone.replace(/[\s\-()]/g, "");
+  if (phone.startsWith("+972")) {
+    return "0" + phone.slice(4);
+  }
   if (phone.startsWith("972")) {
     return "0" + phone.slice(3);
   }

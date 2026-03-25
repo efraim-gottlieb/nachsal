@@ -96,32 +96,34 @@ export async function processOrefAlert(alertData, io) {
     });
   }
 
-  // SMS only to commanders
-  try {
-    const smsCommanders = await getCommandersWithSmsAlerts();
-    if (smsCommanders.length > 0) {
-      const soldiersByCity = {};
-      for (const s of soldiers) {
-        soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
-      }
-      const cityBreakdown = Object.entries(soldiersByCity)
-        .map(([city, count]) => `${city} - ${count} חיילים`)
-        .join("\n");
-      const cmdMessage = soldiers.length > 0
-        ? `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`
-        : `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cities.join(", ")}`;
-      for (const cmd of smsCommanders) {
-        if (cmd.phone) {
-          try {
-            await sendSms(cmd.phone, cmdMessage);
-          } catch (e) {
-            console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+  // SMS only to commanders — only if there are soldiers in the alert area
+  if (soldiers.length > 0) {
+    try {
+      const smsCommanders = await getCommandersWithSmsAlerts();
+      if (smsCommanders.length > 0) {
+        const soldiersByCity = {};
+        for (const s of soldiers) {
+          soldiersByCity[s.city] = (soldiersByCity[s.city] || 0) + 1;
+        }
+        const cityBreakdown = Object.entries(soldiersByCity)
+          .map(([city, count]) => `${city} - ${count} חיילים`)
+          .join("\n");
+        const cmdMessage = `🛡️ מערכת נכס"ל - התראה למפקד\n\n${title}\n\n${cityBreakdown}\n\nסה"כ: ${soldiers.length} חיילים באזור מאוים`;
+        for (const cmd of smsCommanders) {
+          if (cmd.phone) {
+            try {
+              await sendSms(cmd.phone, cmdMessage);
+            } catch (e) {
+              console.error(`SMS failed for commander ${cmd.phone}:`, e.message);
+            }
           }
         }
       }
+    } catch (e) {
+      console.error("[Oref] Failed to send commander SMS:", e.message);
     }
-  } catch (e) {
-    console.error("[Oref] Failed to send commander SMS:", e.message);
+  } else {
+    console.log(`[Oref] No soldiers in alert area - skipping commander SMS`);
   }
 }
 
