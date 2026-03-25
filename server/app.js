@@ -161,8 +161,8 @@ app.get("/api/test-sms", async (req, res) => {
 
 // Print body endpoint
 app.post("/api/print-body", (req, res) => {
-  console.log("Received body:", req.body);
-  res.json({ ok: true, body: req.body });
+  console.log("[PRINT-BODY] " + JSON.stringify(req.body));
+  res.json(req.body);
 });
 
 // Error handling
