@@ -25,6 +25,7 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import statusRoutes from "./routes/status.routes.js";
+import smsWebhookRoutes from "./routes/smsWebhook.routes.js";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/status", statusRoutes);
+app.use("/api/sms-webhook", smsWebhookRoutes);
 
 // Oref alerts - persistent (last 10 min)
 import { getRecentOrefAlerts } from "./services/orefAlert.service.js";
@@ -158,14 +160,6 @@ app.get("/api/test-sms", async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
-});
-
-// Print body endpoint
-app.post("/api/print-body", (req, res) => {
-  console.log("[PRINT-BODY] query:", JSON.stringify(req.query));
-  console.log("[PRINT-BODY] body:", JSON.stringify(req.body));
-  console.log("[PRINT-BODY] headers:", JSON.stringify(req.headers));
-  res.json({ query: req.query, body: req.body });
 });
 
 // Error handling
