@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
@@ -177,46 +177,6 @@ export default function CommanderDashboard() {
       socket.off("event_ended", onEventEnded);
     };
   }, [socket, showToast, loadData, loadSoldiers, loadPersistentOrefAlerts]);
-
-  // Client-side Oref polling — browser is in Israel so it can reach oref.org.il
-  const prevOrefCitiesRef = useRef("[]");
-  const wasOrefActiveRef = useRef(false);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const OREF_URL = "https://www.oref.org.il/WarningMessages/alert/alerts.json";
-    const ALLOWED_TITLES = ["ירי רקטות וטילים", "חדירת כלי טיס עוין"];
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(OREF_URL, {
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
-        const text = await res.text();
-
-        if (text.length > 2) {
-          const alertData = JSON.parse(text);
-          if (!ALLOWED_TITLES.includes(alertData.title)) return;
-
-          const citiesStr = JSON.stringify(alertData.data || []);
-          if (citiesStr !== prevOrefCitiesRef.current) {
-            prevOrefCitiesRef.current = citiesStr;
-            wasOrefActiveRef.current = true;
-            socket.emit("client_oref_alert", { type: "alert", alertData });
-          }
-        } else if (wasOrefActiveRef.current) {
-          wasOrefActiveRef.current = false;
-          prevOrefCitiesRef.current = "[]";
-          socket.emit("client_oref_alert", { type: "ended" });
-        }
-      } catch {
-        // CORS or network error — silently retry
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [socket]);
 
   // Merge persistent Oref cities with live orefCities for display
   const activeCities = useMemo(() => {

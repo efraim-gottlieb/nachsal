@@ -1,6 +1,5 @@
 import { verifyToken } from "../utils/token.js";
 import { User } from "../db/models/User.js";
-import { processOrefAlert, processOrefAlertEnd } from "./oref.service.js";
 
 export function setupSocket(io) {
   io.use(async (socket, next) => {
@@ -46,21 +45,6 @@ export function setupSocket(io) {
       socket.user.city = data.city;
       socket.join(`city_${data.city}`);
     });
-
-    // Commanders can forward Oref alerts from their browser (Israeli IP)
-    if (["commander", "admin"].includes(socket.user.user_type)) {
-      socket.on("client_oref_alert", async (data) => {
-        try {
-          if (data.type === "alert" && data.alertData) {
-            await processOrefAlert(data.alertData, io);
-          } else if (data.type === "ended") {
-            processOrefAlertEnd(io);
-          }
-        } catch (err) {
-          console.error("[Socket] Error processing client oref alert:", err.message);
-        }
-      });
-    }
 
     socket.on("disconnect", () => {
       console.log(`[Socket] ${socket.user.name} disconnected`);
