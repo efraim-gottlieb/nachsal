@@ -378,6 +378,41 @@ body {
 .soldier-item .name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
 .soldier-item .details { font-size: 12px; color: var(--text-muted); }
 
+/* ========== Phone Links ========== */
+.phone-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+.phone-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.btn-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+.btn-phone:hover {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+/* ========== Not OK Panel ========== */
+.not-ok-panel {
+  border-color: var(--red) !important;
+  background: linear-gradient(135deg, var(--bg-card), rgba(239, 68, 68, 0.05));
+}
+.not-ok-panel h2 { color: var(--red); }
+
 /* ========== Status Badges ========== */
 .status-badge {
   padding: 4px 14px;

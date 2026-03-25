@@ -15,6 +15,12 @@ const STATUS_LABELS = {
   no_response: "לא ענה ⚪",
 };
 
+const STATUS_ORDER = { no_response: 0, pending: 1, not_ok: 2, ok: 3 };
+
+function sortStatuses(statuses) {
+  return [...statuses].sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9));
+}
+
 export default function CommanderDashboard() {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
@@ -53,6 +59,7 @@ export default function CommanderDashboard() {
   const [soldierSearch, setSoldierSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", password: "", phone: "", city: "" });
+  const [notOkSoldiers, setNotOkSoldiers] = useState([]);
 
   const loadSoldiers = useCallback(async () => {
     try {
@@ -79,16 +86,30 @@ export default function CommanderDashboard() {
 
       let pending = 0;
       let ok = 0;
+      const freshStatuses = {};
       for (const event of data) {
         const result = await api.getEventStatuses(event._id);
         const statuses = Array.isArray(result) ? result : (result.statuses || []);
         const allOk = Array.isArray(result) ? (statuses.length > 0 && statuses.every((s) => s.status === "ok")) : (result.allOk || false);
+        freshStatuses[event._id] = { statuses, allOk };
         setEventStatuses((prev) => ({ ...prev, [event._id]: { statuses, allOk } }));
         pending += statuses.filter((s) => s.status === "pending").length;
         ok += statuses.filter((s) => s.status === "ok").length;
       }
       setPendingCount(pending);
       setOkCount(ok);
+
+      // Collect all not_ok soldiers across all events
+      const notOk = [];
+      for (const event of data) {
+        const sts = freshStatuses[event._id]?.statuses || [];
+        sts.filter((s) => s.status === "not_ok").forEach((s) => {
+          if (!notOk.find((n) => n._id === s._id)) {
+            notOk.push({ ...s, eventCities: event.cities });
+          }
+        });
+      }
+      setNotOkSoldiers(notOk);
     } catch (err) {
       console.error("Error loading events:", err);
     }
@@ -492,12 +513,15 @@ export default function CommanderDashboard() {
                         אין חיילים מושפעים
                       </li>
                     ) : (
-                      eventStatuses[event._id].statuses.map((s) => (
+                      sortStatuses(eventStatuses[event._id].statuses).map((s) => (
                         <li key={s._id} className="soldier-item">
                           <div className="info">
                             <span className="name">{s.user_id?.name || "לא ידוע"}</span>
                             <span className="details">
-                              {s.user_id?.city || ""} | {s.user_id?.phone || ""}
+                              {s.user_id?.city || ""}
+                              {s.user_id?.phone && (
+                                <> | <a href={`tel:${s.user_id.phone}`} className="phone-link">📞 {s.user_id.phone}</a></>
+                              )}
                             </span>
                           </div>
                           <span className={`status-badge ${s.status}`}>
@@ -512,6 +536,30 @@ export default function CommanderDashboard() {
             ))
           )}
         </div>
+
+        {/* Not OK Soldiers */}
+        {notOkSoldiers.length > 0 && (
+          <div className="card not-ok-panel">
+            <h2>🚑 חיילים שדיווחו לא בסדר</h2>
+            <ul className="soldier-list">
+              {notOkSoldiers.map((s) => (
+                <li key={s._id} className="soldier-item">
+                  <div className="info">
+                    <span className="name">{s.user_id?.name || "לא ידוע"}</span>
+                    <span className="details">
+                      {s.user_id?.city || ""} | אירוע: {s.eventCities?.join(", ")}
+                    </span>
+                  </div>
+                  {s.user_id?.phone && (
+                    <a href={`tel:${s.user_id.phone}`} className="phone-link btn-phone">
+                      📞 {s.user_id.phone}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Map + Soldiers */}
         <div className="grid-2">
@@ -555,7 +603,11 @@ export default function CommanderDashboard() {
                       <tr key={s._id}>
                         <td>{s.name}</td>
                         <td>{s.email}</td>
-                        <td>{s.phone}</td>
+                        <td>
+                          {s.phone ? (
+                            <a href={`tel:${s.phone}`} className="phone-link">📞 {s.phone}</a>
+                          ) : "—"}
+                        </td>
                         <td>{s.city || "לא עודכן"}</td>
                         <td className="actions-cell">
                           <button
