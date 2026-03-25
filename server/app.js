@@ -40,6 +40,7 @@ app.set("io", io);
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 
 // Serve React build
@@ -161,8 +162,10 @@ app.get("/api/test-sms", async (req, res) => {
 
 // Print body endpoint
 app.post("/api/print-body", (req, res) => {
-  console.log("[PRINT-BODY] " + JSON.stringify(req.body));
-  res.json(req.body);
+  console.log("[PRINT-BODY] query:", JSON.stringify(req.query));
+  console.log("[PRINT-BODY] body:", JSON.stringify(req.body));
+  console.log("[PRINT-BODY] headers:", JSON.stringify(req.headers));
+  res.json({ query: req.query, body: req.body });
 });
 
 // Error handling
