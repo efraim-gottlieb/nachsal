@@ -35,8 +35,11 @@ export async function getPendingStatusForSoldier(userId) {
   const statuses = await SoldierStatus.find({
     user_id: userId,
     status: "pending",
-  }).populate("event_id");
-  return statuses;
+  }).populate({
+    path: "event_id",
+    match: { status: "active" },
+  });
+  return statuses.filter((s) => s.event_id !== null);
 }
 
 export async function getStatusByUserAndEvent(userId, eventId) {

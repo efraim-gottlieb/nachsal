@@ -98,7 +98,8 @@ export async function getEventStatuses(req, res) {
 
   const { id } = req.params;
   const statuses = await getStatusesByEvent(id);
-  res.json(statuses);
+  const allOk = statuses.length > 0 && statuses.every((s) => s.status === "ok");
+  res.json({ statuses, allOk });
 }
 
 export async function closeEvent(req, res) {

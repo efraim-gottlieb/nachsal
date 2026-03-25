@@ -14,7 +14,7 @@ export async function createEvent(cities, createdBy, orefAlert = false) {
 }
 
 export async function getActiveEvents() {
-  const events = await Event.find({ status: "active" }).populate("created_by", "name email");
+  const events = await Event.find({ status: "active" }).sort({ createdAt: -1 }).populate("created_by", "name email");
   return events;
 }
 
