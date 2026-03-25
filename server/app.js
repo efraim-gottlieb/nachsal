@@ -159,6 +159,12 @@ app.get("/api/test-sms", async (req, res) => {
   }
 });
 
+// Print body endpoint
+app.post("/api/print-body", (req, res) => {
+  console.log("Received body:", req.body);
+  res.json({ ok: true, body: req.body });
+});
+
 // Error handling
 app.use(errorHandling);
 
