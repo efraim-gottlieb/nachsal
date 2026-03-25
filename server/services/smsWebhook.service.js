@@ -4,11 +4,8 @@ import { SoldierStatus } from "../db/models/SoldierStatus.js";
 
 export function convertPhoneToLocal(phone) {
   if (!phone) return phone;
-  // Handle +972, 972, 0 formats
-  phone = phone.replace(/[\s\-()]/g, "");
-  if (phone.startsWith("+972")) {
-    return "0" + phone.slice(4);
-  }
+  // Handle +972, 972, 0 formats — strip everything non-digit first
+  phone = phone.replace(/[^\d]/g, "");
   if (phone.startsWith("972")) {
     return "0" + phone.slice(3);
   }
@@ -16,7 +13,20 @@ export function convertPhoneToLocal(phone) {
 }
 
 export async function findSoldierByPhone(phone) {
-  const soldier = await User.findOne({ phone, user_type: "soldier" });
+  // Normalize: try exact match first, then try alternative formats
+  let soldier = await User.findOne({ phone, user_type: "soldier" });
+  if (soldier) return soldier;
+
+  // Try matching with/without leading 0 / 972 prefix
+  const stripped = phone.startsWith("0") ? phone.slice(1) : phone;
+  const withZero = "0" + stripped;
+  const with972 = "972" + stripped;
+  const withPlus972 = "+972" + stripped;
+
+  soldier = await User.findOne({
+    phone: { $in: [withZero, with972, withPlus972, stripped] },
+    user_type: "soldier",
+  });
   return soldier;
 }
 

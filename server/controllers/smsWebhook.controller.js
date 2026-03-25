@@ -19,6 +19,7 @@ export async function handleIncomingSms(req, res) {
   }
 
   const localPhone = convertPhoneToLocal(phone);
+  console.log(`[SMS-Webhook] Phone: raw="${phone}" → local="${localPhone}"`);
 
   const soldier = await findSoldierByPhone(localPhone);
   if (!soldier) {
