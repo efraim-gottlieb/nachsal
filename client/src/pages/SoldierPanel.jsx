@@ -33,6 +33,7 @@ export default function SoldierPanel() {
   const [surveys, setSurveys] = useState([]);
   const [modalEvent, setModalEvent] = useState(null);
   const [respondedEvents, setRespondedEvents] = useState({});
+  const [locationRequest, setLocationRequest] = useState(null);
 
   const loadPendingSurveys = useCallback(async () => {
     try {
@@ -43,9 +44,19 @@ export default function SoldierPanel() {
     }
   }, []);
 
+  const loadLatestLocationRequest = useCallback(async () => {
+    try {
+      const data = await api.getLatestLocationRequest();
+      setLocationRequest(data);
+    } catch {
+      // no active request
+    }
+  }, []);
+
   useEffect(() => {
     loadPendingSurveys();
-  }, [loadPendingSurveys]);
+    loadLatestLocationRequest();
+  }, [loadPendingSurveys, loadLatestLocationRequest]);
 
   useEffect(() => {
     if (!socket) return;
@@ -65,11 +76,22 @@ export default function SoldierPanel() {
         return eid !== data.event_id;
       }));
     }
+    function onLocationRequest(data) {
+      setLocationRequest(data);
+      showToast("נדרש עדכון מיקום — יש לעדכן את המיקום שלך", "alert");
+    }
+    function onLocationRequestClosed() {
+      setLocationRequest(null);
+    }
     socket.on("new_event_survey", onNewSurvey);
     socket.on("event_ended", onEventEnded);
+    socket.on("location_request", onLocationRequest);
+    socket.on("location_request_closed", onLocationRequestClosed);
     return () => {
       socket.off("new_event_survey", onNewSurvey);
       socket.off("event_ended", onEventEnded);
+      socket.off("location_request", onLocationRequest);
+      socket.off("location_request_closed", onLocationRequestClosed);
     };
   }, [socket, showToast, loadPendingSurveys]);
 
@@ -130,6 +152,26 @@ export default function SoldierPanel() {
       />
 
       <div className="container" style={{ maxWidth: 700 }}>
+        {/* Location Request Banner */}
+        {locationRequest && (
+          <div className="survey-card" style={{
+            borderColor: "var(--accent)",
+            background: "var(--accent-dim, rgba(59,130,246,0.08))",
+            borderWidth: 2,
+          }}>
+            <h3 style={{ color: "var(--accent, #3b82f6)" }}>📍 נדרש עדכון מיקום</h3>
+            <p>המפקד ביקש מכל החיילים לעדכן את המיקום שלהם.</p>
+            <small style={{ color: "var(--text-muted)" }}>
+              {new Date(locationRequest.createdAt).toLocaleString("he-IL")}
+            </small>
+            <div style={{ marginTop: 12 }}>
+              <a href="#location-section" className="btn btn-primary" style={{ textDecoration: "none" }}>
+                עדכן מיקום עכשיו ⬇️
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Pending Surveys */}
         {surveys.map((s) => {
           const eid = s.event_id?._id || s.event_id;
@@ -190,7 +232,7 @@ export default function SoldierPanel() {
         })}
 
         {/* Location & Phone */}
-        <div className="location-card">
+        <div className="location-card" id="location-section">
           <h3>📍 מיקום נוכחי</h3>
           <div className="current-location">{user?.city || "לא עודכן"}</div>
           <div className="form-group">

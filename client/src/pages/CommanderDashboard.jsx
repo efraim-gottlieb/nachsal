@@ -61,6 +61,7 @@ export default function CommanderDashboard() {
   const [addForm, setAddForm] = useState({ name: "", email: "", password: "", phone: "", city: "" });
   const [notOkSoldiers, setNotOkSoldiers] = useState([]);
   const [dismissedNotOk, setDismissedNotOk] = useState(new Set());
+  const [sendingLocationRequest, setSendingLocationRequest] = useState(false);
 
   const loadSoldiers = useCallback(async () => {
     try {
@@ -183,12 +184,20 @@ export default function CommanderDashboard() {
       loadData();
     }
 
+    function onLocationRequestSent(data) {
+      showToast(
+        `${data.created_by} שלח דרישת עדכון מיקום — ${data.total_soldiers} חיילים, ${data.sms_sent} SMS`,
+        "warning"
+      );
+    }
+
     socket.on("oref_alert", onOrefAlert);
     socket.on("oref_soldiers_affected", onOrefSoldiersAffected);
     socket.on("event_created", onEventCreated);
     socket.on("soldier_responded", onSoldierResponded);
     socket.on("soldier_location_updated", onSoldierLocationUpdated);
     socket.on("event_ended", onEventEnded);
+    socket.on("location_request_sent", onLocationRequestSent);
 
     return () => {
       socket.off("oref_alert", onOrefAlert);
@@ -197,6 +206,7 @@ export default function CommanderDashboard() {
       socket.off("soldier_responded", onSoldierResponded);
       socket.off("soldier_location_updated", onSoldierLocationUpdated);
       socket.off("event_ended", onEventEnded);
+      socket.off("location_request_sent", onLocationRequestSent);
     };
   }, [socket, showToast, loadData, loadSoldiers, loadPersistentOrefAlerts]);
 
@@ -335,6 +345,22 @@ export default function CommanderDashboard() {
     }
   }
 
+  async function handleSendLocationRequest() {
+    if (!window.confirm("האם לשלוח דרישת עדכון מיקום לכל החיילים?")) return;
+    setSendingLocationRequest(true);
+    try {
+      const result = await api.sendLocationRequest();
+      showToast(
+        `דרישת עדכון מיקום נשלחה — ${result.sms_sent} SMS נשלחו, ${result.total_soldiers} חיילים`,
+        "success"
+      );
+    } catch (err) {
+      showToast(err.message, "alert");
+    } finally {
+      setSendingLocationRequest(false);
+    }
+  }
+
   const filteredSoldiers = soldiers.filter((s) =>
     s.name.includes(soldierSearch) ||
     s.phone.includes(soldierSearch) ||
@@ -349,7 +375,10 @@ export default function CommanderDashboard() {
         title="🛡️ מערכת נכס״ל - דשבורד מפקד"
         userName={user?.name}
         onLogout={handleLogout}
-        navLinks={[{ to: "/commanders", label: "ניהול מפקדים" }]}
+        navLinks={[
+          { to: "/commanders", label: "ניהול מפקדים" },
+          { to: "/commander/location-requests", label: "📍 מעקב מיקום" },
+        ]}
       />
 
       <div className="container">
@@ -371,6 +400,21 @@ export default function CommanderDashboard() {
             <div className="number">{okCount}</div>
             <div className="label">דיווחו בסדר</div>
           </div>
+        </div>
+
+        {/* Location Request Button */}
+        <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px" }}>
+          <div>
+            <h3 style={{ margin: 0 }}>📍 דרישת עדכון מיקום</h3>
+            <small style={{ color: "var(--text-muted)" }}>שליחת SMS + התראה לכל החיילים לעדכן מיקום</small>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={handleSendLocationRequest}
+            disabled={sendingLocationRequest}
+          >
+            {sendingLocationRequest ? "שולח..." : "שלח דרישת עדכון מיקום"}
+          </button>
         </div>
 
         {/* Oref + Manual Event */}
