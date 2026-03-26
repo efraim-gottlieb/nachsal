@@ -29,7 +29,7 @@ export async function triggerEvent(req, res) {
         io.to(`user_${soldier._id}`).emit("new_event_survey", {
           event_id: event._id,
           cities: event.cities,
-          message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?` + "\nאנא השב עם 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.",
+          message: `התראה פעילה באזור ${soldier.city}! האם אתה בסדר?` + "\ השב 1 אם אתה בסדר, או 2 אם אתה זקוק לעזרה.",
         });
       }
 
