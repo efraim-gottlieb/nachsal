@@ -6,7 +6,7 @@ import {
   getSoldiersLocationStatus,
   getAllLocationRequests,
 } from "../services/locationRequest.service.js";
-import { getAllSoldiers } from "../services/user.service.js";
+import { getAllSoldiers, getUserById } from "../services/user.service.js";
 import { sendSms } from "../services/sms.service.js";
 
 export async function sendLocationRequest(req, res) {
@@ -105,4 +105,44 @@ export async function listAllRequests(req, res) {
 
   const requests = await getAllLocationRequests();
   res.json(requests);
+}
+
+export async function sendPersonalLocationRequest(req, res) {
+  if (!["commander", "admin"].includes(req.user.user_type)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const { soldierId } = req.params;
+  const soldier = await getUserById(soldierId);
+  if (!soldier) {
+    return res.status(404).json({ message: "Soldier not found" });
+  }
+
+  const io = req.app.get("io");
+
+  // Emit socket event to the specific soldier
+  io.to(`user_${soldierId}`).emit("location_request", {
+    message: "נדרש עדכון מיקום — יש להיכנס לאזור האישי ולעדכן",
+    link: "https://nachsal-system.onrender.com/soldier",
+    personal: true,
+    createdAt: new Date(),
+  });
+
+  // Send SMS to the soldier
+  let smsSent = false;
+  const smsMessage = `🛡️ מערכת נכס"ל\n\nנדרש עדכון מיקום.\nיש להיכנס לאזור האישי ולעדכן את המיקום שלך:\nhttps://nachsal-system.onrender.com/soldier`;
+
+  if (soldier.phone) {
+    try {
+      await sendSms(soldier.phone, smsMessage);
+      smsSent = true;
+    } catch (err) {
+      console.error(`[PersonalLocationRequest] SMS failed for ${soldier.phone}:`, err.message);
+    }
+  }
+
+  res.json({
+    soldier: { _id: soldier._id, name: soldier.name, phone: soldier.phone },
+    sms_sent: smsSent,
+  });
 }
