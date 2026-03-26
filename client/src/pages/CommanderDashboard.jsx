@@ -361,6 +361,16 @@ export default function CommanderDashboard() {
     }
   }
 
+  async function handlePersonalLocationRequest(soldier) {
+    try {
+      const result = await api.sendPersonalLocationRequest(soldier._id);
+      const smsText = result.sms_sent ? "+ SMS" : "(ללא SMS)";
+      showToast(`דרישת מיקום נשלחה ל${soldier.name} ${smsText}`, "success");
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
   const filteredSoldiers = soldiers.filter((s) =>
     s.name.includes(soldierSearch) ||
     s.phone.includes(soldierSearch) ||
@@ -677,6 +687,13 @@ export default function CommanderDashboard() {
                             onClick={() => handleDeleteSoldier(s)}
                           >
                             מחק
+                          </button>
+                          <button
+                            className="btn btn-small btn-success"
+                            title="שלח דרישת עדכון מיקום אישית"
+                            onClick={() => handlePersonalLocationRequest(s)}
+                          >
+                            📍
                           </button>
                         </td>
                       </tr>

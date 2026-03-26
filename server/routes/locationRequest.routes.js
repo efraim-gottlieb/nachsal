@@ -10,5 +10,6 @@ router.get("/latest", auth, asyncHandler(locationRequestController.getLatestRequ
 router.get("/", auth, asyncHandler(locationRequestController.listAllRequests));
 router.get("/:id/statuses", auth, asyncHandler(locationRequestController.getRequestStatuses));
 router.put("/:id/close", auth, asyncHandler(locationRequestController.closeRequest));
+router.post("/personal/:soldierId", auth, asyncHandler(locationRequestController.sendPersonalLocationRequest));
 
 export default router;

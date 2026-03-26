@@ -116,6 +116,16 @@ export default function LocationRequestDashboard() {
     }
   }
 
+  async function handlePersonalRequest(soldier) {
+    try {
+      const result = await api.sendPersonalLocationRequest(soldier._id);
+      const smsText = result.sms_sent ? "+ SMS" : "(ללא SMS)";
+      showToast(`דרישה אישית נשלחה ל${soldier.name} ${smsText}`, "success");
+    } catch (err) {
+      showToast(err.message, "alert");
+    }
+  }
+
   function handleSelectRequest(request) {
     setSelectedRequest(request);
     setSearch("");
@@ -283,12 +293,13 @@ export default function LocationRequestDashboard() {
                           <th>עיר</th>
                           <th>עדכון אחרון</th>
                           <th>סטטוס</th>
+                          <th>פעולות</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredStatuses.length === 0 ? (
                           <tr>
-                            <td colSpan={5} style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>
+                            <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: 20 }}>
                               {statuses.length === 0 ? "אין חיילים" : "לא נמצאו תוצאות"}
                             </td>
                           </tr>
@@ -316,6 +327,17 @@ export default function LocationRequestDashboard() {
                                 }}>
                                   {s.updatedLocation ? "עדכן ✅" : "לא עדכן ❌"}
                                 </span>
+                              </td>
+                              <td>
+                                {!s.updatedLocation && (
+                                  <button
+                                    className="btn btn-small btn-primary"
+                                    title="שלח דרישה אישית"
+                                    onClick={() => handlePersonalRequest(s)}
+                                  >
+                                    📍 שלח דרישה
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           ))

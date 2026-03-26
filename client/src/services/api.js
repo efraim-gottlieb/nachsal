@@ -162,6 +162,10 @@ class API {
   async closeLocationRequest(id) {
     return this.request("PUT", `/api/location-requests/${id}/close`);
   }
+
+  async sendPersonalLocationRequest(soldierId) {
+    return this.request("POST", `/api/location-requests/personal/${soldierId}`);
+  }
 }
 
 export const api = new API();
