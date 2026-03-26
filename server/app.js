@@ -26,6 +26,7 @@ import userRoutes from "./routes/user.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import statusRoutes from "./routes/status.routes.js";
 import smsWebhookRoutes from "./routes/smsWebhook.routes.js";
+import locationRequestRoutes from "./routes/locationRequest.routes.js";
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/status", statusRoutes);
 app.use("/api/sms-webhook", smsWebhookRoutes);
+app.use("/api/location-requests", locationRequestRoutes);
 
 // Oref alerts - persistent (last 10 min)
 import { getRecentOrefAlerts } from "./services/orefAlert.service.js";

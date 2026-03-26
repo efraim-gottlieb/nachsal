@@ -141,6 +141,27 @@ class API {
   async toggleCommanderSms(id, sms_alerts) {
     return this.request("PUT", `/api/users/commanders/${id}/sms`, { sms_alerts });
   }
+
+  // Location Requests
+  async sendLocationRequest() {
+    return this.request("POST", "/api/location-requests");
+  }
+
+  async getLatestLocationRequest() {
+    return this.request("GET", "/api/location-requests/latest");
+  }
+
+  async getAllLocationRequests() {
+    return this.request("GET", "/api/location-requests");
+  }
+
+  async getLocationRequestStatuses(id) {
+    return this.request("GET", `/api/location-requests/${id}/statuses`);
+  }
+
+  async closeLocationRequest(id) {
+    return this.request("PUT", `/api/location-requests/${id}/close`);
+  }
 }
 
 export const api = new API();
