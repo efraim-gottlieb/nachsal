@@ -7,5 +7,6 @@ const router = Router();
 
 router.post("/respond", auth, asyncHandler(statusControllers.respondToEvent));
 router.get("/pending", auth, asyncHandler(statusControllers.getMyPendingSurveys));
+router.put("/:id/override", auth, asyncHandler(statusControllers.commanderOverrideStatus));
 
 export default router;

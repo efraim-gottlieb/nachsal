@@ -46,3 +46,12 @@ export async function getStatusByUserAndEvent(userId, eventId) {
   const status = await SoldierStatus.findOne({ user_id: userId, event_id: eventId });
   return status;
 }
+
+export async function updateSoldierStatusById(statusId, status) {
+  const soldierStatus = await SoldierStatus.findOneAndUpdate(
+    { _id: statusId },
+    { status, responded_at: new Date() },
+    { new: true }
+  ).populate("user_id", "name phone city");
+  return soldierStatus;
+}

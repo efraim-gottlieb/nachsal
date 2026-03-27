@@ -4,6 +4,7 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import CommanderDashboard from "./pages/CommanderDashboard";
 import CommanderManagement from "./pages/CommanderManagement";
+import SoldierManagement from "./pages/SoldierManagement";
 import LocationRequestDashboard from "./pages/LocationRequestDashboard";
 import SoldierPanel from "./pages/SoldierPanel";
 
@@ -40,6 +41,14 @@ export default function App() {
         element={
           <ProtectedRoute allowedTypes={["commander", "admin"]}>
             <LocationRequestDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/commander/soldiers"
+        element={
+          <ProtectedRoute allowedTypes={["commander", "admin"]}>
+            <SoldierManagement />
           </ProtectedRoute>
         }
       />
