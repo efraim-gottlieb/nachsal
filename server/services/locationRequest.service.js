@@ -37,6 +37,7 @@ export async function getSoldiersLocationStatus(requestId) {
   if (!request) return null;
 
   const soldiers = await User.find({ user_type: "soldier" }).select("-password");
+  const overrides = (request.manual_overrides || []).map((id) => id.toString());
 
   return soldiers.map((s) => ({
     _id: s._id,
@@ -44,7 +45,8 @@ export async function getSoldiersLocationStatus(requestId) {
     phone: s.phone,
     email: s.email,
     city: s.city,
-    updatedLocation: s.updatedAt > request.createdAt,
+    updatedLocation: s.updatedAt > request.createdAt || overrides.includes(s._id.toString()),
+    manualOverride: overrides.includes(s._id.toString()),
     lastUpdate: s.updatedAt,
   }));
 }
@@ -54,4 +56,21 @@ export async function getAllLocationRequests() {
     .sort({ createdAt: -1 })
     .populate("created_by", "name");
   return requests;
+}
+
+export async function toggleManualOverride(requestId, soldierId) {
+  const request = await LocationRequest.findOne({ _id: requestId });
+  if (!request) return null;
+
+  const overrides = (request.manual_overrides || []).map((id) => id.toString());
+  if (overrides.includes(soldierId.toString())) {
+    request.manual_overrides = request.manual_overrides.filter(
+      (id) => id.toString() !== soldierId.toString()
+    );
+  } else {
+    request.manual_overrides.push(soldierId);
+  }
+
+  await request.save();
+  return request;
 }

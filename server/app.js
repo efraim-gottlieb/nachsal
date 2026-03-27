@@ -68,7 +68,7 @@ app.get("/api/oref-alerts", auth, async (req, res) => {
 app.get("/demo-oref-alert", async (req, res) => {
   try {
     const io = req.app.get("io");
-    const cities = req.query.cities ? req.query.cities.split(",") : ["ירושלים", "תל אביב"];
+    const cities = req.query.cities ? req.query.cities.split(",") : ["מודיעין עילית"];
     const title = "ירי רקטות וטילים";
     const desc = "התראת דמו ידנית";
 

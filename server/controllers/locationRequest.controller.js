@@ -5,6 +5,7 @@ import {
   closeLocationRequest,
   getSoldiersLocationStatus,
   getAllLocationRequests,
+  toggleManualOverride,
 } from "../services/locationRequest.service.js";
 import { getAllSoldiers, getUserById } from "../services/user.service.js";
 import { sendSms } from "../services/sms.service.js";
@@ -145,4 +146,18 @@ export async function sendPersonalLocationRequest(req, res) {
     soldier: { _id: soldier._id, name: soldier.name, phone: soldier.phone },
     sms_sent: smsSent,
   });
+}
+
+export async function toggleSoldierLocationOverride(req, res) {
+  if (!["commander", "admin"].includes(req.user.user_type)) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const { id, soldierId } = req.params;
+  const request = await toggleManualOverride(id, soldierId);
+  if (!request) {
+    return res.status(404).json({ message: "Location request not found" });
+  }
+
+  res.json({ message: "Override toggled" });
 }

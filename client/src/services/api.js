@@ -163,6 +163,14 @@ class API {
     return this.request("PUT", `/api/location-requests/${id}/close`);
   }
 
+  async toggleLocationOverride(requestId, soldierId) {
+    return this.request("PUT", `/api/location-requests/${requestId}/override/${soldierId}`);
+  }
+
+  async overrideSoldierStatus(statusId, status) {
+    return this.request("PUT", `/api/status/${statusId}/override`, { status });
+  }
+
   async sendPersonalLocationRequest(soldierId) {
     return this.request("POST", `/api/location-requests/personal/${soldierId}`);
   }

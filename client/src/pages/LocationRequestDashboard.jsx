@@ -326,9 +326,30 @@ export default function LocationRequestDashboard() {
                                   color: s.updatedLocation ? "var(--green)" : "var(--red)",
                                 }}>
                                   {s.updatedLocation ? "עדכן ✅" : "לא עדכן ❌"}
+                                  {s.manualOverride && " (ידני)"}
                                 </span>
                               </td>
-                              <td>
+                              <td style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                <button
+                                  className={`btn btn-small ${s.updatedLocation ? "btn-warning" : "btn-success"}`}
+                                  title={s.updatedLocation ? "סמן כלא עדכן" : "סמן כעדכן"}
+                                  onClick={async () => {
+                                    try {
+                                      await api.toggleLocationOverride(selectedRequest._id, s._id);
+                                      showToast(
+                                        s.updatedLocation
+                                          ? `${s.name} סומן כלא עדכן מיקום`
+                                          : `${s.name} סומן כעדכן מיקום ✅`,
+                                        "success"
+                                      );
+                                      await loadStatuses(selectedRequest._id);
+                                    } catch (err) {
+                                      showToast(err.message, "alert");
+                                    }
+                                  }}
+                                >
+                                  {s.updatedLocation ? "↩ בטל" : "✅ סמן עדכן"}
+                                </button>
                                 {!s.updatedLocation && (
                                   <button
                                     className="btn btn-small btn-primary"
